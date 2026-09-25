@@ -1,0 +1,46 @@
+name: Windows release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --shamefully-hoist
+
+      - name: Package Windows application
+        shell: pwsh
+        run: node node_modules\@electron\packager\bin\electron-packager.js . myholypoly --platform=win32 --arch=x64 --out=release --overwrite --icon=assets/myholypoly.ico --ignore=release
+
+      - name: Create ZIP archive
+        shell: pwsh
+        run: Compress-Archive -LiteralPath release\myholypoly-win32-x64 -DestinationPath release\myholypoly-windows-x64-${{ github.ref_name }}.zip -CompressionLevel Optimal
+
+      - name: Publish GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" "release\myholypoly-windows-x64-${{ github.ref_name }}.zip" `
+            --title "myholypoly ${{ github.ref_name }}" `
+            --notes "Windows용 e-POLY 숙제 플래너 첫 릴리즈입니다. 월간 일정, 진행 현황, 일정 가져오기·수정·삭제, 메모장을 포함합니다."
