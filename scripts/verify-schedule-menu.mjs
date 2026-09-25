@@ -1,0 +1,23 @@
+const targets = await fetch('http://127.0.0.1:9333/json').then(response => response.json());
+const target = targets.find(item => item.type === 'page' && /myholypoly/i.test(item.title || ''));
+if (!target) throw new Error('myholypoly renderer target not found');
+const socket = new WebSocket(target.webSocketDebuggerUrl);
+await new Promise((resolve, reject) => { socket.addEventListener('open', resolve, { once: true }); socket.addEventListener('error', reject, { once: true }); });
+const expression = `(async () => {
+  showPage('progress');
+  await new Promise(resolve => setTimeout(resolve, 150));
+  const card = document.querySelector('.action-course');
+  const title = card?.querySelector('header strong');
+  const more = card?.querySelector('.schedule-more');
+  more?.click();
+  const menu = card?.querySelector('.schedule-menu');
+  const rect = node => { const box = node?.getBoundingClientRect(); return box ? { top: Math.round(box.top), right: Math.round(box.right), bottom: Math.round(box.bottom), left: Math.round(box.left), width: Math.round(box.width), height: Math.round(box.height) } : null; };
+  const openState = { title: rect(title), more: rect(more), menu: rect(menu), labels: [...(menu?.querySelectorAll('button') || [])].map(button => button.innerText.trim()) };
+  document.body.click();
+  return { ...openState, closed: !menu?.classList.contains('open'), expanded: more?.getAttribute('aria-expanded') };
+})()`;
+socket.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression, awaitPromise: true, returnByValue: true } }));
+const result = await new Promise((resolve, reject) => { const timer = setTimeout(() => reject(new Error('CDP evaluation timed out')), 5000); socket.addEventListener('message', event => { const message = JSON.parse(String(event.data)); if (message.id !== 1) return; clearTimeout(timer); resolve(message.result?.result?.value); }); });
+socket.close();
+console.log(JSON.stringify(result, null, 2));
+if (!result?.more || !result?.menu || Math.abs(result.title.top - result.more.top) > 8 || result.menu.top < result.more.bottom || !result.labels[0]?.includes('일정 수정') || !result.labels[1]?.includes('일정 삭제') || !result.closed || result.expanded !== 'false') process.exitCode = 1;

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>myholypoly</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="editor.css" />
+    <link rel="stylesheet" href="layout-fixes.css" />
+    <link rel="stylesheet" href="linear-theme.css" />
+    <link rel="stylesheet" href="control-system.css" />
+  </head>
+  <body>
+    <div class="app-titlebar"><span class="titlebar-mark" aria-hidden="true"><img src="../../assets/myholypoly.png" alt="" /></span><span>myholypoly — 숙제 플래너</span><div class="window-controls" aria-label="창 제어"><button id="maximizeApp" class="window-control maximize-app" type="button" aria-label="창 최대화" title="최대화">□</button><button id="closeApp" class="window-control close-app" type="button" aria-label="앱 종료" title="닫기">×</button></div></div>
+    <main class="shell">
+      <header class="topbar"><div class="brand"><span>my</span>holypoly</div><nav class="main-nav" aria-label="화면 이동" role="tablist"><button type="button" role="tab" aria-selected="true" class="nav-item active" data-page="overview">전체 일정</button><button type="button" role="tab" aria-selected="false" class="nav-item" data-page="progress">진행 현황</button><button type="button" role="tab" aria-selected="false" class="nav-item" data-page="register">일정 등록</button><button type="button" role="tab" aria-selected="false" class="nav-item" data-page="notes">메모장</button></nav><aside id="sidebarSummary" class="sidebar-summary" aria-label="이번 달 요약"></aside></header>
+      <section id="scheduleFilterBar" class="global-filterbar" aria-label="공통 일정 필터"><div class="gantt-month-controls"><div class="month-picker inline-month-picker"><button id="monthPickerButton" class="month-current inline-month-current" type="button" aria-expanded="false"><span id="monthPickerText"></span></button><div id="monthPopover" class="month-popover" hidden><div class="month-popover-head"><select id="monthPickerYearSelect" aria-label="연도 선택"></select></div><div id="monthGrid" class="month-grid"></div></div><input id="ganttMonth" type="hidden" /></div></div><div id="scheduleScopeTabs" class="scope-tabs" role="tablist" aria-label="공통 일정 범위"><button type="button" role="tab" aria-selected="false" class="scope-tab" data-scope="urgent">마감 임박</button><button type="button" role="tab" aria-selected="false" class="scope-tab" data-scope="today">오늘</button><button type="button" role="tab" aria-selected="false" class="scope-tab" data-scope="week">이번 주</button><button type="button" role="tab" aria-selected="true" class="scope-tab active" data-scope="all">전체</button></div></section>
+      <section id="overviewPage" class="app-page active" aria-label="전체 일정">
+        <div class="page-title"><div><p class="eyebrow">전체 일정</p><h1>월간 일정 대시보드</h1></div></div>
+        <section id="ganttView" class="schedule panel"><div class="view-count-row"><span id="ganttCount" class="task-count"></span></div><div id="ganttChart" class="gantt-chart"></div></section>
+      </section>
+      <section id="progressPage" class="app-page" aria-label="진행 현황" hidden>
+        <div class="page-title"><div><p class="eyebrow">진행 현황</p><h1>과목별 체크리스트</h1></div></div>
+        <section id="checklistView" class="schedule panel"><div class="view-count-row"><span id="taskCount" class="task-count"></span></div><div id="checklistList" class="action-list"><p class="muted">등록된 일정이 없습니다.</p></div></section>
+      </section>
+      <section id="registerPage" class="app-page" aria-label="일정 등록" hidden>
+        <div class="page-title register-page-title"><div><p class="eyebrow">일정 등록</p><h1>일정 가져오기</h1></div></div>
+        <div id="registerSteps" class="register-steps" aria-label="일정 등록 단계"><div class="active"><b>1</b><span>e-POLY 실행</span></div><i></i><div><b>2</b><span>캘린더 열기</span></div><i></i><div><b>3</b><span>숙제 가져오기</span></div><i></i><div><b>4</b><span>내용 편집</span></div></div>
+        <div class="register-dashboard">
+        <div class="register-import-column">
+        <section class="register-control-panel" aria-label="e-POLY 제어">
+          <div class="import-card-block epoly-import-card">
+            <p class="import-card-title">e-POLY에서 일정 가져오기</p>
+            <div class="epoly-row"><span class="epoly-icon" aria-hidden="true">📅</span><div class="epoly-copy"><strong>연결된 캘린더에서 가져오기</strong><span>과제 일정을 자동으로 불러와요</span></div></div>
+            <button id="launchEpoly" type="button" class="app-launch">e-POLY 실행</button>
+          </div>
+          <div class="import-card-block calendar-import-card">
+            <div class="import-card-status"><p class="import-card-title">연결된 캘린더</p><span id="connection" class="connection offline">확인 중</span></div>
+            <label class="plan-date"><span>과제일</span><input id="planDate" class="custom-date-input" type="text" readonly aria-label="과제일 선택" /></label>
+            <button id="getToday" type="button" class="command-button load-schedule">⟳ 일정 불러오기</button>
+            <p id="importMessage" class="import-message" role="status" aria-live="polite" hidden></p>
+            <button id="openCalendar" type="button" class="command-button open-calendar-secondary">캘린더 열기</button>
+          </div>
+          <p id="connectionCopy" class="sr-copy">연결 상태를 확인하고 있습니다.</p>
+        </section>
+        </div>
+        <div class="register-editor-column">
+        <section class="focus-register" aria-label="일정 편집">
+          <div class="focus-register-body">
+            <section class="course-workspace">
+              <div class="course-toolbar"><div><strong>과목 편집</strong><span id="sourceLabel">직접 입력</span></div><div class="course-toolbar-actions"><button id="addTask" type="button">＋ 과목 추가</button><button id="deleteCourse" type="button">선택 과목 삭제</button><button id="register" type="button" class="primary">일정 등록</button></div></div>
+              <div id="courseEditor" class="course-stack"></div>
+              <div class="workspace-footer"><p id="message" class="message" role="status"></p></div>
+            </section>
+          </div>
+        </section>
+        </div>
+        </div>
+      </section>
+      <section id="notesPage" class="app-page notes-page" aria-label="메모장" hidden>
+        <div class="page-title notes-page-title"><div><p class="eyebrow">간단 메모</p><h1>메모장</h1></div></div>
+        <section class="notes-panel"><div id="notesList" class="notes-list"></div></section>
+      </section>
+    </main>
+    <div id="datePickerPopover" class="date-picker-popover" hidden>
+      <div class="date-picker-head"><select id="datePickerYearSelect" aria-label="연도 선택"></select><select id="datePickerMonthSelect" aria-label="월 선택"></select></div>
+      <div class="date-picker-week"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+      <div id="datePickerDays" class="date-picker-days"></div>
+      <div class="date-picker-foot"><button id="datePickerToday" type="button">오늘</button><button id="datePickerClear" type="button">지우기</button></div>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
