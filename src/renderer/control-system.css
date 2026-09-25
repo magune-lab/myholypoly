@@ -454,6 +454,13 @@ body {
 .import-message[data-type="success"] { border-color: #b9d9cb; background: #edf7f2; color: #34705b; }
 .import-message[data-type="error"] { border-color: #efbeb5; background: #fff0ed; color: #b34f3d; }
 .import-message[data-type="empty"] { border-color: #e2d4ad; background: #fff8e7; color: #7c6740; }
+.import-message[data-type="success"]::before { border-color: #b9d9cb; }
+.import-message[data-type="error"]::before { border-color: #efbeb5; }
+.import-message[data-type="empty"]::before { border-color: #e2d4ad; }
+.register-steps > div:first-child .import-message { left: 0; transform: none; }
+.register-steps > div:first-child .import-message::before { left: 28px; }
+.register-steps > div:last-child .import-message { right: 0; left: auto; transform: none; }
+.register-steps > div:last-child .import-message::before { right: 28px; left: auto; transform: rotate(45deg); }
 .primary,
 .workspace-footer > .primary {
   background: #7064e9 !important;
