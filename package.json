@@ -1,6 +1,6 @@
 {
   "name": "myholypoly",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "A Windows companion for e-POLY homework planning.",
   "main": "src/main.mjs",

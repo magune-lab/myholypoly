@@ -43,4 +43,4 @@ jobs:
         run: |
           gh release create "${{ github.ref_name }}" "release\myholypoly-windows-x64-${{ github.ref_name }}.zip" `
             --title "myholypoly ${{ github.ref_name }}" `
-            --notes "Windows용 e-POLY 숙제 플래너 첫 릴리즈입니다. 월간 일정, 진행 현황, 일정 가져오기·수정·삭제, 메모장을 포함합니다."
+            --notes "Windows용 e-POLY 숙제 플래너 릴리즈입니다. 최신 기능 개선과 오류 수정을 포함합니다."
