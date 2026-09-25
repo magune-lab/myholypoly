@@ -28,7 +28,7 @@
       </section>
       <section id="registerPage" class="app-page" aria-label="일정 등록" hidden>
         <div class="page-title register-page-title"><div><p class="eyebrow">일정 등록</p><h1>일정 가져오기</h1></div></div>
-        <div id="registerSteps" class="register-steps" aria-label="일정 등록 단계"><div class="active"><b>1</b><span>e-POLY 실행</span></div><i></i><div><b>2</b><span>캘린더 열기</span></div><i></i><div><b>3</b><span>숙제 가져오기</span></div><i></i><div><b>4</b><span>내용 편집</span></div></div>
+        <div id="registerSteps" class="register-steps" aria-label="일정 등록 단계"><div class="active"><b>1</b><span>e-POLY 실행</span></div><i></i><div><b>2</b><span>캘린더 열기</span></div><i></i><div class="import-step"><b>3</b><span>숙제 가져오기</span><p id="importMessage" class="import-message" role="status" aria-live="polite" hidden></p></div><i></i><div><b>4</b><span>내용 편집</span></div></div>
         <div class="register-dashboard">
         <div class="register-import-column">
         <section class="register-control-panel" aria-label="e-POLY 제어">
@@ -41,7 +41,6 @@
             <div class="import-card-status"><p class="import-card-title">연결된 캘린더</p><span id="connection" class="connection offline">확인 중</span></div>
             <label class="plan-date"><span>과제일</span><input id="planDate" class="custom-date-input" type="text" readonly aria-label="과제일 선택" /></label>
             <button id="getToday" type="button" class="command-button load-schedule">⟳ 일정 불러오기</button>
-            <p id="importMessage" class="import-message" role="status" aria-live="polite" hidden></p>
             <button id="openCalendar" type="button" class="command-button open-calendar-secondary">캘린더 열기</button>
           </div>
           <p id="connectionCopy" class="sr-copy">연결 상태를 확인하고 있습니다.</p>
