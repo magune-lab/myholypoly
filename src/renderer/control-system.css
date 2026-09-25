@@ -1728,6 +1728,7 @@ select {
 .notes-empty button { min-height: 34px; padding: 0 13px; border: 1px solid #E2D6B6; border-radius: 10px; background: #fff; color: #766A52; font-weight: 700; }
 .note-add-tile {
   display: grid;
+  order: -1;
   min-height: 228px;
   border: 1px dashed #D8C9A5;
   border-radius: 16px;
