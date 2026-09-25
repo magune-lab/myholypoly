@@ -430,9 +430,9 @@ body {
 .add-focus-line { color: #685dd4; }
 .workspace-footer .message { color: #858a9d; }
 .import-message {
-  position: fixed;
-  z-index: 80;
-  top: 58px;
+  position: absolute;
+  z-index: 8;
+  bottom: 56px;
   left: 50%;
   width: max-content;
   max-width: 320px;
@@ -449,7 +449,7 @@ body {
   text-align: left;
   transform: translateX(-50%);
 }
-.import-message::before { position: absolute; top: -6px; left: 50%; width: 10px; height: 10px; border-top: 1px solid #dfd6bd; border-left: 1px solid #dfd6bd; background: inherit; content: ''; transform: translateX(-50%) rotate(45deg); }
+.import-message::before { position: absolute; bottom: -6px; left: 50%; width: 10px; height: 10px; border-right: 1px solid #dfd6bd; border-bottom: 1px solid #dfd6bd; background: inherit; content: ''; transform: translateX(-50%) rotate(45deg); }
 .import-message[hidden] { display: none; }
 .import-message[data-type="success"] { border-color: #b9d9cb; background: #edf7f2; color: #34705b; }
 .import-message[data-type="error"] { border-color: #efbeb5; background: #fff0ed; color: #b34f3d; }
