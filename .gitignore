@@ -1,6 +1,9 @@
 node_modules/
 out/
 release/
+release-msix/
+*.pfx
+*.p12
 review-*.png
 registration-c.png
 .DS_Store

@@ -7,12 +7,38 @@
   "scripts": {
     "dev": "electron .",
     "start": "electron .",
-    "package:win": "electron-packager . myholypoly --platform=win32 --arch=x64 --out=release --overwrite --icon=assets/myholypoly.ico --ignore=release"
+    "package:win": "electron-packager . myholypoly --platform=win32 --arch=x64 --out=release --overwrite --icon=assets/myholypoly.ico --ignore=release",
+    "package:msix": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-msix.ps1"
+  },
+  "build": {
+    "appId": "com.magune-lab.myholypoly",
+    "productName": "myholypoly",
+    "directories": {
+      "output": "release-msix"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "assets/myholypoly.ico",
+      "target": "appx"
+    },
+    "appx": {
+      "applicationId": "myholypoly",
+      "identityName": "magune-lab.myholypoly",
+      "publisher": "CN=magune-lab",
+      "publisherDisplayName": "magune-lab",
+      "displayName": "myholypoly",
+      "artifactName": "myholypoly-windows-x64-${version}.${ext}"
+    }
   },
   "devDependencies": {
     "@electron/asar": "3.2.18",
     "@electron/packager": "18.3.6",
     "electron": "^38.0.0",
+    "electron-builder": "^26.15.3",
     "trim-repeated": "1.0.0"
   }
 }
