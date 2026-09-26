@@ -13,16 +13,17 @@ myholypoly는 e-POLY의 숙제 일정을 가져와 과목별로 정리하고, �
 
 ## 설치 방법
 
-### 1. 필요한 파일 다운로드
+### 1. 파일 다운로드
 
 [Releases](https://github.com/magune-lab/myholypoly/releases)에서 최신 버전을 열고 다음 두 파일을 다운로드합니다.
 
 - `magune-lab.cer`: Windows가 myholypoly의 배포자를 확인하기 위한 공개 인증서
 - `myholypoly-windows-x64-버전.appx`: 앱 설치 파일
 
-> 처음 설치할 때만 인증서가 필요합니다. 이후 같은 인증서로 서명된 업데이트에서는 다시 설치할 필요가 없습니다.
-
 ### 2. 인증서 설치
+
+> [!IMPORTANT]
+> APPX를 실행하기 전에 인증서를 먼저 설치해야 합니다. 저장 위치는 반드시 **로컬 컴퓨터 → 신뢰할 수 있는 사용자(Trusted People)** 로 지정하세요. 다른 위치에 설치하면 앱을 설치할 수 없습니다.
 
 1. 다운로드한 `magune-lab.cer`를 두 번 클릭합니다.
 2. **인증서 설치**를 누릅니다.
@@ -32,29 +33,11 @@ myholypoly는 e-POLY의 숙제 일정을 가져와 과목별로 정리하고, �
 6. **찾아보기**를 누르고 **신뢰할 수 있는 사용자**를 선택합니다.
 7. **다음 → 마침**을 눌러 설치합니다.
 
-인증서는 반드시 `로컬 컴퓨터 → 신뢰할 수 있는 사용자(Trusted People)`에 설치해야 합니다. `현재 사용자`나 다른 저장소를 선택하면 앱 설치가 실패할 수 있습니다.
-
 ### 3. 앱 설치
 
 `myholypoly-windows-x64-버전.appx`를 두 번 클릭한 후 **설치**를 누릅니다.
 
-## 설치 오류 해결
-
-### `0x800B0109` 또는 `서명의 루트 인증서는 신뢰할 수 있어야 합니다`
-
-인증서가 설치되지 않았거나 잘못된 저장소에 설치된 경우입니다. 위의 **2. 인증서 설치** 과정을 다시 진행한 다음 APPX를 실행하세요.
-
-관리자 PowerShell에서는 다음 명령으로 설치할 수도 있습니다. 다운로드 위치가 다르면 파일 경로를 변경하세요.
-
-```powershell
-Import-Certificate `
-  -FilePath "$env:USERPROFILE\Downloads\magune-lab.cer" `
-  -CertStoreLocation "Cert:\LocalMachine\TrustedPeople"
-```
-
-### 이전 버전이 실행 중이라는 오류
-
-작업 표시줄과 시스템 트레이에서 myholypoly를 완전히 종료한 뒤 다시 설치하세요.
+인증서는 PC마다 처음 한 번만 설치하면 됩니다. 이후 업데이트는 새 APPX를 받아 기존 앱 위에 설치하면 됩니다.
 
 ## 업데이트와 데이터
 
@@ -70,16 +53,3 @@ Import-Certificate `
 6. **진행 현황** 또는 **월간 일정**에서 등록한 숙제를 관리합니다.
 
 해당 날짜에 숙제가 없다면 과목 편집 영역은 비어 있으며, 상단 안내 메시지에 결과가 표시됩니다.
-
-## 개발 실행
-
-```powershell
-pnpm install
-pnpm dev
-```
-
-서명된 MSIX 패키지를 만들려면 Windows SDK와 로컬 서명 인증서가 필요합니다.
-
-```powershell
-pnpm package:msix
-```
