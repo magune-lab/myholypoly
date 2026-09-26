@@ -1,21 +1,32 @@
-# myholypoly 자체 서명 설치
+# myholypoly 설치 안내
 
-`magune-lab.cer`는 myholypoly 설치 패키지의 서명을 확인하기 위한 공개 인증서입니다. 비밀키는 포함하지 않습니다.
+릴리스에서 다음 두 파일을 같은 폴더에 다운로드하세요.
 
-처음 사용하는 Windows PC에서 한 번만 다음 순서로 설치합니다.
+- `magune-lab.cer`: 최초 설치용 공개 인증서
+- `myholypoly-windows-x64-버전.appx`: 앱 설치 파일
 
-1. `magune-lab.cer`를 두 번 클릭하고 **인증서 설치**를 선택합니다.
-2. 저장 위치로 **로컬 컴퓨터**를 선택합니다. 관리자 확인이 표시될 수 있습니다.
+## 처음 설치하는 경우
+
+1. `magune-lab.cer`를 두 번 클릭하고 **인증서 설치**를 누릅니다.
+2. 저장 위치를 **로컬 컴퓨터**로 선택합니다.
 3. **모든 인증서를 다음 저장소에 저장**을 선택합니다.
-4. 인증서 저장소를 **신뢰할 수 있는 사용자(Trusted People)** 로 지정합니다.
-5. 설치를 완료한 뒤 함께 배포된 `myholypoly-windows-x64-버전.appx`를 실행합니다.
+4. **찾아보기**에서 **신뢰할 수 있는 사용자(Trusted People)** 를 선택합니다.
+5. 설치를 마친 뒤 APPX 파일을 실행합니다.
 
-또는 저장소를 내려받은 경우 **관리자 권한 PowerShell**에서 다음 명령을 한 번 실행할 수 있습니다.
+`현재 사용자` 저장소에 인증서를 설치하면 `0x800B0109` 오류가 발생할 수 있습니다. 반드시 `로컬 컴퓨터 → 신뢰할 수 있는 사용자`에 설치하세요.
+
+## 오류가 발생하는 경우
+
+`서명의 루트 인증서는 신뢰할 수 있어야 합니다`라는 메시지가 보이면 인증서 설치 위치가 잘못된 것입니다. 위 과정을 다시 진행한 뒤 APPX를 실행하세요.
+
+관리자 PowerShell을 사용할 수도 있습니다.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\install-signing-certificate.ps1
+Import-Certificate `
+  -FilePath ".\magune-lab.cer" `
+  -CertStoreLocation "Cert:\LocalMachine\TrustedPeople"
 ```
 
-이후 동일한 `magune-lab` 인증서로 서명된 업데이트는 인증서를 다시 설치할 필요가 없습니다.
+인증서는 최초 한 번만 설치하면 됩니다. 새 버전은 APPX만 내려받아 기존 앱 위에 설치할 수 있으며, 저장된 일정과 메모는 유지됩니다.
 
-인증서 설치는 무료이며 Windows가 이 배포자를 신뢰하도록 해당 PC에만 등록합니다. `magune-lab-code-signing.pfx` 개인키와 암호는 저장소나 릴리스에 포함하지 않습니다.
+`magune-lab.cer`에는 공개 인증서만 들어 있으며 개인키는 포함되지 않습니다.
