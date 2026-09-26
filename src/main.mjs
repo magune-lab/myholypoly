@@ -6,6 +6,10 @@ import { captureHomeworkByDate, captureOpenHomework, captureTodayHomework, getEp
 
 const here = dirname(fileURLToPath(import.meta.url));
 const appIcon = join(here, '..', 'assets', 'myholypoly.png');
+// Keep user data independent from the executable/version folder so extracted
+// releases and development builds all read the same schedules and localStorage.
+const persistentDataPath = join(app.getPath('appData'), 'myholypoly');
+app.setPath('userData', persistentDataPath);
 const planFile = () => join(app.getPath('userData'), 'plan.json');
 const blankPlan = { version: 1, plans: {} };
 
