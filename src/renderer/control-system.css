@@ -1472,7 +1472,7 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
   transition: border-color .14s ease, box-shadow .14s ease;
 }
 #registerPage .stacked-course.active { border-color: #FF8A77; box-shadow: inset 3px 0 #FF6F59, 0 3px 10px rgba(216,73,47,.07); }
-#registerPage .stacked-course-head { display: grid; grid-template-columns: 28px minmax(150px,1fr) 168px; align-items: center; gap: 10px; }
+#registerPage .stacked-course-head { display: grid; grid-template-columns: minmax(150px,1fr) 168px; align-items: center; gap: 10px; }
 #registerPage .course-number { color: #B3A788; font-family: var(--planner-number); font-size: 10px; text-align: center; }
 #registerPage .stacked-course-head > input,
 #registerPage .stacked-course-head label {
@@ -1485,7 +1485,7 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
 #registerPage .stacked-course-head label { display: grid; padding-left: 10px; color: #8C8068; font-size: 9px; grid-template-columns: auto 1fr; align-items: center; gap: 4px; }
 #registerPage .stacked-course-head label input { width: 100%; height: 38px; padding: 0 8px; border: 0; background: transparent; color: #6E624C; font-size: 10px; }
 #registerPage .stacked-course .focus-course-lines { margin-top: 12px; }
-#registerPage .stacked-course .add-focus-line { margin: 9px 0 0 29px; }
+#registerPage .stacked-course .add-focus-line { margin: 9px 0 0 37px; }
 #registerPage .workspace-footer { margin: 0; padding: 0 18px 14px; }
 
 @media(max-width: 1080px) {
