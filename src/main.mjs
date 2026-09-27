@@ -36,6 +36,12 @@ function createWindow() {
 app.whenReady().then(() => {
   app.setAppUserModelId('com.myholypoly.desktop');
   Menu.setApplicationMenu(null);
+  ipcMain.handle('window:minimize', event => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) return false;
+    window.minimize();
+    return true;
+  });
   ipcMain.handle('window:toggle-maximize', event => {
     const window = BrowserWindow.fromWebContents(event.sender);
     if (!window) return false;

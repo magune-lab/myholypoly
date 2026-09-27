@@ -988,7 +988,7 @@ body {
   left: 0;
   display: flex;
   height: 34px;
-  padding: 0 80px 0 12px;
+  padding: 0 114px 0 12px;
   border-bottom: 0;
   background: #191A1E;
   color: #C8C9CD;
@@ -1544,6 +1544,13 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
 }
 .window-control::before,
 .window-control::after { display: block; position: absolute; content: ''; }
+.window-control.minimize-app::before {
+  width: 11px;
+  height: 1.3px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translateY(4px);
+}
 .window-control.maximize-app::before {
   width: 8px;
   height: 8px;

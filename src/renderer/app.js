@@ -2,6 +2,7 @@ const $ = selector => document.querySelector(selector);
 const now = new Date();
 const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
 const bridge = window.myholypoly;
+$('#minimizeApp').onclick = () => bridge.windowControls.minimize();
 $('#closeApp').onclick = () => window.close();
 async function toggleMaximize() {
   const maximized = await bridge.windowControls.toggleMaximize();
