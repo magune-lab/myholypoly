@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +12,7 @@ const persistentDataPath = join(app.getPath('appData'), 'myholypoly');
 app.setPath('userData', persistentDataPath);
 const planFile = () => join(app.getPath('userData'), 'plan.json');
 const blankPlan = { version: 1, plans: {} };
+const epolyInstallGuideUrl = 'https://www.youtube.com/watch?v=g7CY3u4QoWU';
 
 async function readPlan() {
   try { return JSON.parse(await readFile(planFile(), 'utf8')); }
@@ -47,6 +48,7 @@ app.whenReady().then(() => {
   ipcMain.handle('epoly:today-homework', () => captureTodayHomework());
   ipcMain.handle('epoly:date-homework', (_event, date) => captureHomeworkByDate(date));
   ipcMain.handle('epoly:open-calendar', () => openCalendar());
+  ipcMain.handle('epoly:open-install-guide', () => shell.openExternal(epolyInstallGuideUrl));
   ipcMain.handle('plan:read', () => readPlan());
   ipcMain.handle('plan:register', async (_event, draft) => {
     if (!draft?.date || !Array.isArray(draft.items)) throw new Error('등록할 일정 형식이 올바르지 않습니다.');

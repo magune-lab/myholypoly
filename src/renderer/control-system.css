@@ -1356,6 +1356,22 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
   color: #fff;
 }
 #registerPage .epoly-import-card .app-launch:hover { border-color: #e85b46; background: #e85b46; }
+#registerPage .epoly-import-card .app-launch:disabled { border-color: #E8DDBE; background: #EEE8D8; color: #A99D83; cursor: not-allowed; }
+#registerPage .epoly-install-help {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #E8DDBE;
+  border-radius: 12px;
+  background: #FFF9E9;
+  color: #766C58;
+}
+#registerPage .epoly-install-help[hidden] { display: none; }
+#registerPage .epoly-install-help strong,
+#registerPage .epoly-install-help span { display: block; }
+#registerPage .epoly-install-help strong { color: #5E543F; font-size: 11px; }
+#registerPage .epoly-install-help span { margin-top: 4px; font-size: 10px; line-height: 1.55; }
+#registerPage .epoly-install-help #openEpolyInstallGuide { min-height: 34px; margin-top: 10px; background: #fff; color: #D8492F; }
+#registerPage .epoly-install-help #openEpolyInstallGuide:hover { border-color: #FFB3A7; background: #FFF0EB; }
 #registerPage .calendar-import-card .command-button:hover { border-color: #dfcfaa; background: #f8efd5; color: #463C29; }
 #registerPage .calendar-import-card .load-schedule {
   border-color: #FF6F59;

@@ -10,7 +10,8 @@ contextBridge.exposeInMainWorld('myholypoly', {
     openHomework: () => ipcRenderer.invoke('epoly:open-homework'),
     todayHomework: () => ipcRenderer.invoke('epoly:today-homework'),
     dateHomework: date => ipcRenderer.invoke('epoly:date-homework', date),
-    openCalendar: () => ipcRenderer.invoke('epoly:open-calendar')
+    openCalendar: () => ipcRenderer.invoke('epoly:open-calendar'),
+    openInstallGuide: () => ipcRenderer.invoke('epoly:open-install-guide')
   },
   plan: {
     read: () => ipcRenderer.invoke('plan:read'),
