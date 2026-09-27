@@ -1003,7 +1003,8 @@ body {
 .shell {
   display: grid;
   grid-template-columns: 224px minmax(0, 1fr);
-  align-content: start;
+  grid-template-rows: minmax(0, 1fr);
+  align-content: stretch;
   width: min(1360px, 100%);
   height: calc(100vh - 66px);
   min-height: 0;
@@ -1419,7 +1420,7 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
 }
 @media(max-width: 820px) {
   body { padding-inline: 0; }
-  .shell { width: 100%; height: calc(100vh - 46px); margin-top: 20px; padding-left: 0; border-radius: 0; }
+  .shell { display: block; width: 100%; height: calc(100vh - 46px); margin-top: 20px; padding-left: 0; border-radius: 0; }
   .topbar { position: static; display: none; }
   .app-page, .global-filterbar { grid-column: 1 / -1; }
   .register-dashboard { grid-template-columns: 1fr; }
