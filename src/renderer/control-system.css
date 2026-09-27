@@ -49,7 +49,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .focus-course-head > input { height: 44px; }
 .focus-course-head label { height: 44px; }
 .custom-date-input { user-select: none; }
-.custom-date-input:hover { border-color: rgba(157,173,208,.3) !important; background: #22252a !important; }
+.custom-date-input:hover { border-color: #FF9A88 !important; background: #FFFDF8 !important; color: #5C513D !important; -webkit-text-fill-color: #5C513D !important; }
 
 /* Icon and quiet actions */
 .course-rail-head button,
@@ -1833,6 +1833,20 @@ select {
 .inline-course-head input { padding: 0 11px; font-weight: 700; }
 .inline-course-head input:focus,
 .inline-course-tasks input:focus { border-color: var(--course-border); box-shadow: 0 0 0 3px var(--course-soft); }
+.inline-course-head .custom-date-input,
+.inline-course-head .custom-date-input:hover,
+.inline-course-head .custom-date-input:active {
+  border-color: #E2D6B6 !important;
+  background: #FBF6E7 !important;
+  color: #665B47 !important;
+  -webkit-text-fill-color: #665B47 !important;
+}
+.inline-course-head .custom-date-input:focus,
+.inline-course-head .custom-date-input:focus-visible {
+  border-color: var(--course-border) !important;
+  background: #FFFDF8 !important;
+  box-shadow: 0 0 0 3px var(--course-soft);
+}
 .inline-course-tasks { display: grid; gap: 7px; margin-top: 15px; }
 .inline-course-tasks > div { display: grid; grid-template-columns: 24px minmax(0,1fr) 44px; align-items: center; gap: 7px; }
 .inline-course-tasks > div > span { color: #A89A7C; font-size: 10px; font-weight: 700; text-align: center; }
