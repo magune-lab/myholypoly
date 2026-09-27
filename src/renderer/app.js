@@ -238,9 +238,11 @@ async function refreshStatus() {
     $('#epolyInstallHelp').hidden = status.installed;
     $('#launchEpoly').disabled = !status.installed;
     ['#getToday','#openCalendar'].forEach(selector => $(selector).disabled = !status.connected);
-    if (status.calendarOpen) setRegisterStep(3, { allowBack: true });
-    else if (status.connected) setRegisterStep(2, { allowBack: true });
-    else setRegisterStep(1, { allowBack: true });
+    const currentStep = status.calendarOpen ? 3 : status.connected ? 2 : 1;
+    const message = $('#importMessage');
+    const messageStep = [...document.querySelectorAll('#registerSteps > div')].indexOf(message.parentElement) + 1;
+    if (!message.hidden && messageStep > currentStep) setStepMessage(currentStep, '');
+    setRegisterStep(currentStep, { allowBack: true });
     return status;
   })();
   try { return await statusRefreshPromise; }
