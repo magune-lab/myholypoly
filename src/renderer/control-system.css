@@ -1567,6 +1567,7 @@ body.is-maximized .window-controls { top: 0; right: 0; }
   position: relative;
   padding: 0 8px;
   border-radius: 9px;
+  column-gap: 12px;
 }
 #registerPage .focus-course-line:focus-within {
   border-color: transparent !important;
