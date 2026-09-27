@@ -1557,9 +1557,7 @@ body.is-maximized .window-controls { top: 0; right: 0; }
   box-shadow: 0 0 0 3px rgba(255,111,89,.15) !important;
 }
 #registerPage .stacked-course-head label input:focus,
-#registerPage .stacked-course-head label input:focus-visible,
-#registerPage .focus-course-line input:focus,
-#registerPage .focus-course-line input:focus-visible {
+#registerPage .stacked-course-head label input:focus-visible {
   outline: 0 !important;
   background: transparent !important;
   color: #463C29 !important;
@@ -1572,8 +1570,18 @@ body.is-maximized .window-controls { top: 0; right: 0; }
 }
 #registerPage .focus-course-line:focus-within {
   border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+#registerPage .focus-course-line input:focus,
+#registerPage .focus-course-line input:focus-visible {
+  padding: 0 10px !important;
+  border: 1px solid #FF806B !important;
+  border-radius: 10px !important;
+  outline: 0 !important;
   background: #FFFDF8 !important;
-  box-shadow: inset 0 0 0 2px rgba(255,111,89,.34);
+  color: #463C29 !important;
+  box-shadow: 0 0 0 3px rgba(255,111,89,.15) !important;
 }
 
 /* The import-date field must never inherit the legacy dark input skin. */
