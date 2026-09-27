@@ -338,6 +338,23 @@ function moveGanttMonth(offset) {
   updateMonthPicker();
   renderGantt(); renderChecklist();
 }
+function positionMonthPopover() {
+  const button = $('#monthPickerButton');
+  const popover = $('#monthPopover');
+  if (!button || !popover || popover.hidden) return;
+  const buttonRect = button.closest('.inline-month-picker')?.getBoundingClientRect() || button.getBoundingClientRect();
+  const gap = 9;
+  const viewportGap = 14;
+  const width = popover.offsetWidth;
+  const height = popover.offsetHeight;
+  const left = Math.min(Math.max(viewportGap, buttonRect.left), window.innerWidth - width - viewportGap);
+  const spaceBelow = window.innerHeight - buttonRect.bottom - gap - viewportGap;
+  const top = spaceBelow >= height
+    ? buttonRect.bottom + gap
+    : Math.max(viewportGap, buttonRect.top - height - gap);
+  popover.style.left = `${Math.round(left)}px`;
+  popover.style.top = `${Math.round(top)}px`;
+}
 $('#monthPickerButton').onclick = event => {
   event.stopPropagation();
   const popover = $('#monthPopover');
@@ -345,10 +362,12 @@ $('#monthPickerButton').onclick = event => {
   $('#monthPickerButton').setAttribute('aria-expanded', String(!popover.hidden));
   monthPickerYear = Number(($('#ganttMonth').value || today).slice(0, 4));
   updateMonthPicker();
+  positionMonthPopover();
 };
 $('#monthPickerYearSelect').onchange = event => { event.stopPropagation(); monthPickerYear = Number(event.target.value); updateMonthPicker(); };
 $('#monthPopover').onclick = event => event.stopPropagation();
 document.addEventListener('click', () => { $('#monthPopover').hidden = true; $('#monthPickerButton').setAttribute('aria-expanded', 'false'); });
+window.addEventListener('resize', positionMonthPopover);
 updateMonthPicker();
 progressScope = overviewScope;
 function isVisibleTask(item, done) { const monthValue = $('#ganttMonth').value || today.slice(0, 7); const [year, month] = monthValue.split('-').map(Number); const first = `${monthValue}-01`; const last = `${monthValue}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`; const start = item.startDate || item.date; const due = item.dueDate || start; if (start > last || due < first) return false; const diff = dayDiff(due); if (progressScope === 'all') return true; if (progressScope === 'urgent') return !done && diff !== '' && diff <= 3; if (progressScope === 'today') return !done && (due === today || item.startDate === today); const weekEnd = new Date(`${today}T00:00:00`); weekEnd.setDate(weekEnd.getDate() + 6); return !done && due <= weekEnd.toISOString().slice(0, 10); }

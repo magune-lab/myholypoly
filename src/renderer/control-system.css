@@ -1671,6 +1671,12 @@ select {
 
 .month-popover,
 .date-picker-popover { color-scheme: light !important; background: #FFFEFB !important; color: #463C29 !important; }
+.global-filterbar .inline-month-picker .month-popover {
+  position: fixed;
+  z-index: 120;
+  top: auto;
+  left: auto;
+}
 .month-popover select,
 .date-picker-popover select { color-scheme: light !important; background: #FBF6E7 !important; color: #463C29 !important; }
 .month-grid button,
