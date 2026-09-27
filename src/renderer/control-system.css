@@ -1569,6 +1569,11 @@ body.is-maximized .window-controls { top: 0; right: 0; }
   border-radius: 9px;
   column-gap: 12px;
 }
+#registerPage .focus-course-line input {
+  padding: 0 10px !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+}
 #registerPage .focus-course-line:focus-within {
   border-color: transparent !important;
   background: transparent !important;
@@ -1576,7 +1581,6 @@ body.is-maximized .window-controls { top: 0; right: 0; }
 }
 #registerPage .focus-course-line input:focus,
 #registerPage .focus-course-line input:focus-visible {
-  padding: 0 10px !important;
   border: 1px solid #B8862F !important;
   border-radius: 10px !important;
   outline: 0 !important;
