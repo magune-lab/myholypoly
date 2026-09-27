@@ -83,7 +83,7 @@ app.whenReady().then(() => {
       detail: item.detail || '',
       startDate: item.startDate || target.date,
       dueDate: item.dueDate || '',
-      done: Array.from({ length: lineCount }, (_, index) => Boolean(previous.done?.[index]))
+      done: Array.from({ length: lineCount }, (_, index) => Array.isArray(item.done) ? Boolean(item.done[index]) : Boolean(previous.done?.[index]))
     };
     plan.plans[target.date].updatedAt = new Date().toISOString();
     await savePlan(plan);

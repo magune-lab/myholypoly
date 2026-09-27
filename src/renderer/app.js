@@ -16,6 +16,7 @@ let source = 'manual';
 let courses = [];
 let activeCourseIndex = 0;
 let editingTarget = null;
+let inlineCourseDraft = null;
 let savedPlans = {};
 let selectedCourseKey = '';
 let pageHistory = ['overview'];
@@ -345,17 +346,44 @@ function renderSidebarSummary() { const host = $('#sidebarSummary'); if (!host) 
 function renderChecklist() { const host = $('#checklistList'); const tasks = allItems().flatMap(item => lines(item).map((text, lineIndex) => ({ item, text, lineIndex, done: Boolean(item.done?.[lineIndex]) }))).filter(task => isVisibleTask(task.item, task.done)); host.innerHTML = ''; $('#taskCount').textContent = progressScope === 'urgent' ? `3일 이내 · ${tasks.length}개` : `${tasks.filter(task => !task.done).length}개 남음`; if (!tasks.length) { host.innerHTML = progressScope === 'urgent' ? '<p class="muted">3일 이내 마감인 미완료 할 일이 없습니다.</p>' : '<p class="muted">이 범위에 표시할 할 일이 없습니다.</p>'; return; } tasks.sort((a, b) => (a.done - b.done) || (a.item.dueDate || '9999').localeCompare(b.item.dueDate || '9999')).forEach(task => { const diff = dayDiff(task.item.dueDate); const dueLabel = diff === '' ? '마감일 없음' : diff < 0 ? '기한 지남' : diff === 0 ? 'D-day' : `D-${diff}`; const urgency = !task.done && diff !== '' && diff <= 1 ? 'critical' : !task.done && diff !== '' && diff <= 3 ? 'soon' : ''; const row = document.createElement('label'); row.className = `action-task ${task.done ? 'done' : ''} ${urgency}`; row.innerHTML = `<input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span><span class="task-body"><small>${escapeHtml(task.item.title)}</small><strong>${escapeHtml(task.text)}</strong></span><span class="task-deadline">${dueLabel}</span>`; host.append(row); row.querySelector('input').onchange = async event => { try { const result = await bridge.plan.toggleLine(task.item.date, task.item.itemIndex, task.lineIndex, event.target.checked); savedPlans = result.plans; renderChecklist(); renderGantt(); } catch (error) { setMessage(error.message, true); event.target.checked = !event.target.checked; } }; }); }
 function courseTargets(course) { return [...new Map(course.tasks.map(task => [`${task.item.date}:${task.item.itemIndex}`, { date: task.item.date, itemIndex: task.item.itemIndex }])).values()]; }
 function editSchedule(course) {
-  const item = course.tasks[0]?.item;
-  if (!item) return;
-  setEditingMode({ date: item.date, itemIndex: item.itemIndex });
-  source = 'manual';
-  $('#sourceLabel').textContent = '등록 일정 수정';
-  $('#planDate').value = item.date;
-  setCourses([{ title: item.title, detail: item.detail, dueDate: item.dueDate, startDate: item.startDate }]);
-  setRegisterStep(4, { allowBack: true });
-  setImportMessage('');
-  setMessage('과목과 내용을 수정한 뒤 수정 저장을 눌러 주세요.');
-  showPage('register');
+  const completeTasks = allItems()
+    .filter(item => courseKey(item.title, item.dueDate) === course.key)
+    .flatMap(item => lines(item).map((text, lineIndex) => ({ item, text, lineIndex, done: Boolean(item.done?.[lineIndex]) })));
+  inlineCourseDraft = {
+    key: course.key,
+    title: course.title,
+    dueDate: course.dueDate || '',
+    tasks: completeTasks
+  };
+  closeScheduleMenus();
+  renderChecklist();
+  requestAnimationFrame(() => document.querySelector('.action-course.is-editing input')?.focus());
+}
+async function saveInlineSchedule(course) {
+  const title = inlineCourseDraft.title.trim();
+  const taskTexts = inlineCourseDraft.tasks.map(task => task.text.trim()).filter(Boolean);
+  if (!title) return setMessage('과목 이름을 입력하세요.', true);
+  if (!taskTexts.length) return setMessage('내용을 하나 이상 입력하세요.', true);
+  try {
+    const nextDueDate = inlineCourseDraft.dueDate;
+    for (const target of courseTargets({ tasks: inlineCourseDraft.tasks })) {
+      const original = inlineCourseDraft.tasks.find(task => task.item.date === target.date && task.item.itemIndex === target.itemIndex)?.item;
+      const tasks = inlineCourseDraft.tasks.filter(task => task.item.date === target.date && task.item.itemIndex === target.itemIndex && task.text.trim());
+      const result = await bridge.plan.updateItem(target, {
+        title,
+        dueDate: inlineCourseDraft.dueDate,
+        startDate: original?.startDate || target.date,
+        detail: tasks.map(task => task.text.trim()).join('\n'),
+        done: tasks.map(task => Boolean(task.done))
+      });
+      savedPlans = result.plans;
+    }
+    inlineCourseDraft = null;
+    selectedCourseKey = courseKey(title, nextDueDate);
+    setMessage('일정을 수정했습니다.');
+    renderChecklist();
+    renderGantt();
+  } catch (error) { setMessage(error.message, true); }
 }
 async function deleteSchedule(course) {
   if (!window.confirm(`'${course.title}' 일정을 삭제할까요?`)) return;
@@ -389,11 +417,27 @@ function renderChecklist() {
     const urgency = diff !== '' && diff <= 1 ? 'critical' : diff !== '' && diff <= 3 ? 'soon' : '';
     const palette = coursePalette(course.title);
     const card = document.createElement('article');
-    card.className = `action-course ${urgency} ${course.key === selectedCourseKey ? 'is-target' : ''}`;
+    const editing = inlineCourseDraft?.key === course.key;
+    card.className = `action-course ${urgency} ${course.key === selectedCourseKey ? 'is-target' : ''} ${editing ? 'is-editing' : ''}`;
     card.dataset.courseKey = course.key;
     card.style.setProperty('--course-bg', palette.bg); card.style.setProperty('--course-border', palette.border); card.style.setProperty('--course-soft', palette.soft); card.style.setProperty('--course-text', palette.text);
-    card.innerHTML = `<header><div><span class="course-dot"></span><strong>${escapeHtml(course.title)}</strong><small>마감 ${formatDate(course.dueDate)}</small></div><div class="action-course-meta"><span class="task-deadline">${dueLabel}</span><div class="schedule-actions"><button type="button" class="schedule-more" aria-label="일정 메뉴" aria-expanded="false">•••</button><div class="schedule-menu"><button type="button" data-edit-schedule><span>✎</span>일정 수정</button><button type="button" data-delete-schedule><span>×</span>일정 삭제</button></div></div></div></header><div class="action-course-tasks">${course.tasks.map(task => `<label class="action-course-line ${task.done ? 'done' : ''}"><input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span><span>${escapeHtml(task.text)}</span></label>`).join('')}</div><footer>${course.tasks.filter(task => task.done).length}/${course.tasks.length} 완료</footer>`;
+    card.innerHTML = editing
+      ? `<div class="inline-course-editor"><div class="inline-course-head"><label><span>과목 이름</span><input data-inline-title value="${escapeHtml(inlineCourseDraft.title)}"></label><label class="inline-course-date"><span>마감일</span><input data-inline-due class="custom-date-input" type="text" readonly value="${escapeHtml(inlineCourseDraft.dueDate)}"></label></div><div class="inline-course-tasks">${inlineCourseDraft.tasks.map((task, index) => `<div><span>${String(index + 1).padStart(2, '0')}</span><input data-inline-task="${index}" value="${escapeHtml(task.text)}"><button type="button" data-inline-remove="${index}" aria-label="내용 삭제">삭제</button></div>`).join('')}</div><button type="button" class="inline-add-task">＋ 내용 추가</button><div class="inline-editor-actions"><button type="button" class="inline-cancel">취소</button><button type="button" class="inline-save">수정 저장</button></div></div>`
+      : `<header><div><span class="course-dot"></span><strong>${escapeHtml(course.title)}</strong><small>마감 ${formatDate(course.dueDate)}</small></div><div class="action-course-meta"><span class="task-deadline">${dueLabel}</span><div class="schedule-actions"><button type="button" class="schedule-more" aria-label="일정 메뉴" aria-expanded="false">•••</button><div class="schedule-menu"><button type="button" data-edit-schedule><span>✎</span>일정 수정</button><button type="button" data-delete-schedule><span>×</span>일정 삭제</button></div></div></div></header><div class="action-course-tasks">${course.tasks.map(task => `<label class="action-course-line ${task.done ? 'done' : ''}"><input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span><span>${escapeHtml(task.text)}</span></label>`).join('')}</div><footer>${course.tasks.filter(task => task.done).length}/${course.tasks.length} 완료</footer>`;
     host.append(card);
+    if (editing) {
+      const titleInput = card.querySelector('[data-inline-title]');
+      const dueInput = card.querySelector('[data-inline-due]');
+      titleInput.oninput = event => { inlineCourseDraft.title = event.target.value; };
+      dueInput.oninput = event => { inlineCourseDraft.dueDate = event.target.value; };
+      bindDatePicker(dueInput);
+      card.querySelectorAll('[data-inline-task]').forEach(input => input.oninput = event => { inlineCourseDraft.tasks[Number(event.target.dataset.inlineTask)].text = event.target.value; });
+      card.querySelectorAll('[data-inline-remove]').forEach(button => button.onclick = () => { if (inlineCourseDraft.tasks.length === 1) return setMessage('내용을 하나 이상 남겨 주세요.', true); inlineCourseDraft.tasks.splice(Number(button.dataset.inlineRemove), 1); renderChecklist(); });
+      card.querySelector('.inline-add-task').onclick = () => { const template = inlineCourseDraft.tasks[0]; inlineCourseDraft.tasks.push({ ...template, text: '', done: false, lineIndex: -1 }); renderChecklist(); requestAnimationFrame(() => { const inputs = document.querySelectorAll('.action-course.is-editing [data-inline-task]'); inputs[inputs.length - 1]?.focus(); }); };
+      card.querySelector('.inline-cancel').onclick = () => { inlineCourseDraft = null; setMessage(''); renderChecklist(); };
+      card.querySelector('.inline-save').onclick = () => saveInlineSchedule(course);
+      return;
+    }
     card.querySelectorAll('input').forEach((input, index) => input.onchange = async event => { const task = course.tasks[index]; try { const result = await bridge.plan.toggleLine(task.item.date, task.item.itemIndex, task.lineIndex, event.target.checked); savedPlans = result.plans; renderChecklist(); renderGantt(); } catch (error) { setMessage(error.message, true); event.target.checked = !event.target.checked; } });
     const menu = card.querySelector('.schedule-menu');
     const more = card.querySelector('.schedule-more');
