@@ -39,6 +39,7 @@ if (-not $sdkBin) {
   throw 'Windows SDK MakeAppx/SignTool was not found.'
 }
 $makeAppx = Join-Path $sdkBin.FullName 'x64\makeappx.exe'
+$makePri = Join-Path $sdkBin.FullName 'x64\makepri.exe'
 $signTool = Join-Path $sdkBin.FullName 'x64\signtool.exe'
 
 Push-Location $projectRoot
@@ -92,6 +93,15 @@ try {
 </Package>
 "@
   Set-Content -LiteralPath (Join-Path $unpacked 'AppxManifest.xml') -Value $manifest -Encoding utf8
+  $priConfig = Join-Path $unpacked 'priconfig.xml'
+  $resourcesPri = Join-Path $unpacked 'resources.pri'
+  if (Test-Path -LiteralPath $priConfig) { Remove-Item -LiteralPath $priConfig -Force }
+  if (Test-Path -LiteralPath $resourcesPri) { Remove-Item -LiteralPath $resourcesPri -Force }
+  & $makePri createconfig /cf $priConfig /dq ko-KR /o
+  if ($LASTEXITCODE -ne 0) { throw 'MakePri configuration failed.' }
+  & $makePri new /pr $unpacked /cf $priConfig /of $resourcesPri /o
+  if ($LASTEXITCODE -ne 0) { throw 'MakePri resource indexing failed.' }
+  Remove-Item -LiteralPath $priConfig -Force
   if (Test-Path -LiteralPath $appx) { Remove-Item -LiteralPath $appx -Force }
 
   & $makeAppx pack /d $unpacked /p $appx /o
