@@ -1576,12 +1576,12 @@ body.is-maximized .window-controls { top: 0; right: 0; }
 #registerPage .focus-course-line input:focus,
 #registerPage .focus-course-line input:focus-visible {
   padding: 0 10px !important;
-  border: 1px solid #FF806B !important;
+  border: 1px solid #B8862F !important;
   border-radius: 10px !important;
   outline: 0 !important;
-  background: #FFFDF8 !important;
-  color: #463C29 !important;
-  box-shadow: 0 0 0 3px rgba(255,111,89,.15) !important;
+  background: #FFFEFB !important;
+  color: #514733 !important;
+  box-shadow: 0 0 0 5px rgba(255,111,89,.18) !important;
 }
 
 /* The import-date field must never inherit the legacy dark input skin. */
