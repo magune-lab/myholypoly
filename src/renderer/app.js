@@ -26,6 +26,7 @@ const validScopes = ['urgent', 'today', 'week', 'all'];
 const storedScope = localStorage.getItem(scopeStorageKey);
 let overviewScope = validScopes.includes(storedScope) ? storedScope : 'all';
 let registerStep = 1;
+let statusRefreshPromise = null;
 const maxCourses = 5;
 const lines = course => String(course.detail || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
 const escapeHtml = value => { const node = document.createElement('span'); node.textContent = value || ''; return node.innerHTML; };
@@ -226,7 +227,25 @@ function setRegisterStep(step, { allowBack = false } = {}) {
   steps.forEach((node, index) => { node.classList.toggle('done', index + 1 < registerStep); node.classList.toggle('active', index + 1 === registerStep); });
   lines.forEach((node, index) => node.classList.toggle('done', index + 1 < registerStep));
 }
-async function refreshStatus() { if (!bridge?.epoly) throw new Error('앱 연결을 시작하지 못했습니다. myholypoly를 다시 실행하세요.'); const status = await bridge.epoly.status(); $('#connection').className = `connection ${status.connected ? 'online' : 'offline'}`; $('#connection').textContent = status.connected ? '연결됨' : status.installed ? '연결 대기' : '미설치'; $('#connectionCopy').textContent = status.connected ? (status.calendarOpen ? 'e-POLY 캘린더가 열려 있습니다.' : 'e-POLY가 열려 있습니다.') : status.installed ? '연동 모드로 e-POLY를 열어 주세요.' : 'PC 설치 가이드를 보고 e-POLY를 설치한 후 다시 시도해 주세요.'; $('#epolyInstallHelp').hidden = status.installed; $('#launchEpoly').disabled = !status.installed; ['#getToday','#openCalendar'].forEach(selector => $(selector).disabled = !status.connected); if (status.calendarOpen) setRegisterStep(3); else if (status.connected) setRegisterStep(2); }
+async function refreshStatus() {
+  if (statusRefreshPromise) return statusRefreshPromise;
+  statusRefreshPromise = (async () => {
+    if (!bridge?.epoly) throw new Error('앱 연결을 시작하지 못했습니다. myholypoly를 다시 실행하세요.');
+    const status = await bridge.epoly.status();
+    $('#connection').className = `connection ${status.connected ? 'online' : 'offline'}`;
+    $('#connection').textContent = status.connected ? '연결됨' : status.installed ? '연결 대기' : '미설치';
+    $('#connectionCopy').textContent = status.connected ? (status.calendarOpen ? 'e-POLY 캘린더가 열려 있습니다.' : 'e-POLY가 열려 있습니다.') : status.installed ? '연동 모드로 e-POLY를 열어 주세요.' : 'PC 설치 가이드를 보고 e-POLY를 설치한 후 다시 시도해 주세요.';
+    $('#epolyInstallHelp').hidden = status.installed;
+    $('#launchEpoly').disabled = !status.installed;
+    ['#getToday','#openCalendar'].forEach(selector => $(selector).disabled = !status.connected);
+    if (status.calendarOpen) setRegisterStep(3, { allowBack: true });
+    else if (status.connected) setRegisterStep(2, { allowBack: true });
+    else setRegisterStep(1, { allowBack: true });
+    return status;
+  })();
+  try { return await statusRefreshPromise; }
+  finally { statusRefreshPromise = null; }
+}
 
 let progressScope = overviewScope;
 function isVisibleTask(item, done) { if (progressScope === 'all') return true; const due = item.dueDate || item.startDate || item.date; if (progressScope === 'today') return due <= today || item.startDate === today; const weekEnd = new Date(`${today}T00:00:00`); weekEnd.setDate(weekEnd.getDate() + 6); const end = weekEnd.toISOString().slice(0, 10); return due <= end || !done && due < today; }
@@ -307,7 +326,13 @@ renderNotes();
 setInterval(() => {
   if (document.querySelector('.nav-item.active')?.dataset.page !== 'register') return;
   refreshStatus().catch(() => {});
-}, 3000);
+}, 2000);
+window.addEventListener('focus', () => {
+  if (document.querySelector('.nav-item.active')?.dataset.page === 'register') refreshStatus().catch(() => {});
+});
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && document.querySelector('.nav-item.active')?.dataset.page === 'register') refreshStatus().catch(() => {});
+});
 document.querySelector('#overviewPage .page-title').insertAdjacentElement('afterend', $('#scheduleFilterBar'));
 $('#ganttMonth').value = today.slice(0, 7); $('#ganttMonth').onchange = () => { renderGantt(); renderChecklist(); };
 let monthPickerYear = Number(today.slice(0, 4));

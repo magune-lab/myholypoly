@@ -1,10 +1,19 @@
-import { spawn } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { promisify } from 'node:util';
 
 const EPOLY_PATH = 'C:\\Program Files (x86)\\KOREAPOLYSCHOOL\\e-POLY\\e-POLY.exe';
 const DEBUG_PORT = 9222;
 const debugUrl = `http://127.0.0.1:${DEBUG_PORT}`;
+const execFileAsync = promisify(execFile);
 const timeout = (promise, ms = 2500) => Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('e-POLY 연결 시간이 초과되었습니다.')), ms))]);
+
+async function isEpolyRunning() {
+  try {
+    const { stdout } = await execFileAsync('tasklist.exe', ['/FI', 'IMAGENAME eq e-POLY.exe', '/FO', 'CSV', '/NH'], { windowsHide: true, timeout: 1800 });
+    return /"e-POLY\.exe"/i.test(stdout);
+  } catch { return false; }
+}
 
 async function targets() {
   const response = await timeout(fetch(`${debugUrl}/json`));
@@ -48,6 +57,7 @@ function normalizeTasks(tasks = []) {
 
 export async function getEpolyStatus() {
   const installed = existsSync(EPOLY_PATH);
+  if (!installed || !(await isEpolyRunning())) return { installed, connected: false, calendarOpen: false };
   try {
     const pages = await targets();
     return { installed, connected: true, calendarOpen: pages.some(page => /Calendar/i.test(page.url || '') && !/404 Not Found/i.test(page.title || '')) };
