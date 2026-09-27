@@ -1487,6 +1487,7 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
 #registerPage .stacked-course .focus-course-lines { margin-top: 12px; }
 #registerPage .stacked-course .add-focus-line { margin: 9px 0 0 37px; }
 #registerPage .workspace-footer { margin: 0; padding: 0 18px 14px; }
+#registerPage .workspace-footer { display: none; }
 
 @media(max-width: 1080px) {
   #registerPage .course-toolbar { align-items: flex-start; flex-direction: column; }
