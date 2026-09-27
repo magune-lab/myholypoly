@@ -54,6 +54,12 @@ try {
     $sizes = @{
       'StoreLogo.png' = @(50, 50)
       'Square44x44Logo.png' = @(44, 44)
+      'Square44x44Logo.targetsize-16_altform-unplated.png' = @(16, 16)
+      'Square44x44Logo.targetsize-24_altform-unplated.png' = @(24, 24)
+      'Square44x44Logo.targetsize-32_altform-unplated.png' = @(32, 32)
+      'Square44x44Logo.targetsize-44_altform-unplated.png' = @(44, 44)
+      'Square44x44Logo.targetsize-48_altform-unplated.png' = @(48, 48)
+      'Square44x44Logo.targetsize-256_altform-unplated.png' = @(256, 256)
       'Square150x150Logo.png' = @(150, 150)
       'Wide310x150Logo.png' = @(310, 150)
     }
