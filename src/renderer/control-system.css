@@ -1824,11 +1824,11 @@ select {
 }
 
 /* Edit a schedule without leaving the progress card. */
-.action-course.is-editing { overflow: visible; border-color: var(--course-border); box-shadow: inset 3px 0 var(--course-border), 0 8px 22px rgba(110,88,44,.1); }
+.action-course.is-editing { grid-column: 1 / -1; overflow: visible; border-color: var(--course-border); box-shadow: inset 3px 0 var(--course-border), 0 8px 22px rgba(110,88,44,.1); }
 .inline-course-editor { padding: 18px 19px 16px; }
-.inline-course-head { display: grid; grid-template-columns: minmax(240px,1fr) 116px !important; gap: 10px; }
+.inline-course-head { display: grid; grid-template-columns: minmax(0,1fr) 132px !important; gap: 12px; }
 .inline-course-head label { display: grid; min-width: 0; gap: 6px; color: #9B8E72; font-size: 10px; font-weight: 700; }
-.inline-course-head .inline-course-date { width: 116px !important; max-width: 116px !important; justify-self: end; }
+.inline-course-head .inline-course-date { width: 132px !important; max-width: 132px !important; justify-self: end; }
 .inline-course-head input,
 .inline-course-tasks input { width: 100%; height: 38px; border: 1px solid #E2D6B6; border-radius: 10px; background: #FFFEFB; color: #514733; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 13px; outline: 0; }
 .inline-course-head input { padding: 0 11px; font-weight: 700; }
@@ -1837,7 +1837,7 @@ select {
 .inline-course-head .custom-date-input,
 .inline-course-head .custom-date-input:hover,
 .inline-course-head .custom-date-input:active {
-  width: 116px !important;
+  width: 132px !important;
   padding: 0 9px !important;
   border-color: #E2D6B6 !important;
   background: #FBF6E7 !important;
