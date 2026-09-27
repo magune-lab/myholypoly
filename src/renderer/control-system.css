@@ -1689,6 +1689,7 @@ select {
 #registerPage .focus-course-line button:hover { background: #FFF0EB; color: #C7503E; }
 
 /* Multi-note pad */
+.notes-page { --note-card-height: 228px; }
 .notes-page-title { align-items: flex-start; justify-content: flex-start; }
 .add-note-button {
   min-height: 40px;
@@ -1704,11 +1705,14 @@ select {
 .notes-panel { min-height: calc(100% - 94px); }
 .notes-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; gap: 14px; }
 .note-card {
+  display: grid;
+  height: var(--note-card-height);
   overflow: hidden;
   border: 1px solid #E8DDBE;
   border-radius: 16px;
   background: #FFFEFB;
   box-shadow: 0 3px 14px rgba(110,88,44,.06);
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 .note-card-head { display: grid; padding: 12px 12px 8px; grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
 .note-card-head input {
@@ -1727,10 +1731,11 @@ select {
 .note-card textarea {
   display: block;
   width: calc(100% - 24px);
-  min-height: 150px;
+  height: 100%;
+  min-height: 0;
   margin: 0 12px;
   padding: 11px;
-  resize: vertical;
+  resize: none;
   border: 1px solid #EEE5CD;
   border-radius: 10px;
   outline: 0;
@@ -1744,7 +1749,7 @@ select {
 .note-card footer { padding: 9px 13px 11px; color: #A99D83; font-size: 9px; text-align: right; }
 .notes-empty {
   display: grid;
-  min-height: 300px;
+  height: var(--note-card-height);
   border: 1px dashed #DCCFAD;
   border-radius: 16px;
   background: rgba(255,255,255,.48);
@@ -1760,7 +1765,7 @@ select {
 .note-add-tile {
   display: grid;
   order: -1;
-  min-height: 228px;
+  height: var(--note-card-height);
   border: 1px dashed #D8C9A5;
   border-radius: 16px;
   background: rgba(255,255,255,.34);
