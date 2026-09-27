@@ -1759,8 +1759,7 @@ select {
   justify-items: center;
 }
 .notes-empty > span { font-size: 30px; }
-.notes-empty strong { margin-top: 10px; color: #514733; font-size: 14px; }
-.notes-empty p { margin: 7px 0 14px; font-size: 11px; }
+.notes-empty strong { margin: 10px 0 14px; color: #514733; font-size: 14px; }
 .notes-empty button { min-height: 34px; padding: 0 13px; border: 1px solid #E2D6B6; border-radius: 10px; background: #fff; color: #766A52; font-weight: 700; }
 .note-add-tile {
   display: grid;
