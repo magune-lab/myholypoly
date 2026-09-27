@@ -125,7 +125,16 @@ function renderCourses() {
   editor.querySelectorAll('[data-course-line]').forEach(input => input.oninput = event => { const index = Number(event.target.dataset.courseLine); const card = event.target.closest('.stacked-course'); courses[index].detail = [...card.querySelectorAll('[data-course-line]')].map(node => node.value).join('\n'); selectCourse(index); });
   editor.querySelectorAll('[data-remove-line]').forEach(button => button.onclick = event => { event.stopPropagation(); const [courseIndex, lineIndex] = button.dataset.removeLine.split(':').map(Number); const card = button.closest('.stacked-course'); const values = [...card.querySelectorAll('[data-course-line]')].map(node => node.value); values.splice(lineIndex, 1); courses[courseIndex].detail = values.join('\n'); activeCourseIndex = courseIndex; renderCourses(); });
   editor.querySelectorAll('[data-add-line]').forEach(button => button.onclick = event => { event.stopPropagation(); const index = Number(button.dataset.addLine); const course = courses[index]; course.detail = `${course.detail}${course.detail ? '\n' : ''}새 항목`; activeCourseIndex = index; renderCourses(); const card = editor.querySelector(`[data-course="${index}"]`); const inputs = card.querySelectorAll('[data-course-line]'); inputs[inputs.length - 1].focus(); inputs[inputs.length - 1].select(); });
-  $('#deleteCourse').onclick = () => { courses.splice(activeCourseIndex, 1); activeCourseIndex = Math.max(0, activeCourseIndex - 1); renderCourses(); };
+  $('#deleteCourse').onclick = () => {
+    if (courses.length <= 1) {
+      courses = [{ title: '', detail: '', dueDate: '', startDate: $('#planDate').value }];
+      activeCourseIndex = 0;
+    } else {
+      courses.splice(activeCourseIndex, 1);
+      activeCourseIndex = Math.max(0, activeCourseIndex - 1);
+    }
+    renderCourses();
+  };
 }
 function setCourses(items) { courses = items.map(item => ({ title: item.title || '', detail: item.detail || '', dueDate: item.dueDate || '', startDate: item.startDate || '' })); activeCourseIndex = 0; renderCourses(); }
 function draft() { return { date: $('#planDate').value, source, items: courses.filter(course => course.title).map(course => ({ title: course.title, detail: course.detail, dueDate: course.dueDate, startDate: course.startDate || $('#planDate').value })) }; }
