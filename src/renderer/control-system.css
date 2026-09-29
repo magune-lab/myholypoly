@@ -1226,6 +1226,7 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
 .task-deadline { border-radius: 20px; background: var(--course-soft); color: var(--course-text); }
 .action-course.soon .task-deadline { background: rgba(255,111,89,.12); color: #D8492F; }
 .action-course.critical .task-deadline { background: rgba(240,86,143,.13); color: #C43C71; }
+.action-course.is-complete .task-deadline { background: #E7F6F0; color: #247D5D; }
 
 #registerPage { padding-top: 26px; }
 #registerPage .register-page-title { min-height: 74px; margin-bottom: 20px; }

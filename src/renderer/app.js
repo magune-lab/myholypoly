@@ -471,12 +471,13 @@ function renderChecklist() {
   if (!courses.length) { host.innerHTML = progressScope === 'urgent' ? '<p class="muted">3일 이내 마감인 미완료 할 일이 없습니다.</p>' : '<p class="muted">이 범위에 표시할 할 일이 없습니다.</p>'; return; }
   courses.forEach(course => {
     const diff = dayDiff(course.dueDate);
-    const dueLabel = diff === '' ? '마감일 없음' : diff < 0 ? '기한 지남' : diff === 0 ? 'D-day' : `D-${diff}`;
-    const urgency = diff !== '' && diff <= 1 ? 'critical' : diff !== '' && diff <= 3 ? 'soon' : '';
+    const allComplete = course.tasks.length > 0 && course.tasks.every(task => task.done);
+    const dueLabel = allComplete ? '완료' : diff === '' ? '마감일 없음' : diff < 0 ? '기한 지남' : diff === 0 ? 'D-day' : `D-${diff}`;
+    const urgency = allComplete ? '' : diff !== '' && diff <= 1 ? 'critical' : diff !== '' && diff <= 3 ? 'soon' : '';
     const palette = coursePalette(course.title);
     const card = document.createElement('article');
     const editing = inlineCourseDraft?.key === course.key;
-    card.className = `action-course ${urgency} ${course.key === selectedCourseKey ? 'is-target' : ''} ${editing ? 'is-editing' : ''}`;
+    card.className = `action-course ${urgency} ${allComplete ? 'is-complete' : ''} ${course.key === selectedCourseKey ? 'is-target' : ''} ${editing ? 'is-editing' : ''}`;
     card.dataset.courseKey = course.key;
     card.style.setProperty('--course-bg', palette.bg); card.style.setProperty('--course-border', palette.border); card.style.setProperty('--course-soft', palette.soft); card.style.setProperty('--course-text', palette.text);
     card.innerHTML = editing
