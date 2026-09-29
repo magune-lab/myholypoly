@@ -1198,6 +1198,7 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
 .action-course footer { border-color: #F0E8CD; }
 .action-course header strong,
 .action-course-line { color: #463C29; }
+.action-course-line { font-size: 12px; line-height: 1.45; }
 .action-course header small,
 .action-course footer { color: #B3A788; }
 .action-course header .course-dot { width: 36px; height: 36px; border-radius: 11px; background: var(--course-soft); box-shadow: none; }
