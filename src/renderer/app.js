@@ -30,7 +30,7 @@ let registerStep = 1;
 let statusRefreshPromise = null;
 const maxCourses = 5;
 const lines = course => String(course.detail || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-const escapeHtml = value => { const node = document.createElement('span'); node.textContent = value || ''; return node.innerHTML; };
+const escapeHtml = value => String(value || '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const coursePalettes = [
   { bg: '#DB5A8B', border: '#C94173', soft: '#FBEAF1', text: '#A93260' },
   { bg: '#35A77B', border: '#278E68', soft: '#E7F6F0', text: '#247D5D' },

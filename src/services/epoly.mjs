@@ -44,6 +44,7 @@ function normalizeImportedText(value) {
     .replace(/&amp;/gi, '&')
     .replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>')
+    .replace(/\\(["'])/g, '$1')
     .replace(/\r/g, '')
     .split('\n')
     .map(line => line.replace(/\s+/g, ' ').trim())
