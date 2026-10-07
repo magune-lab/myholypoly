@@ -28,19 +28,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --node-linker=hoisted
 
-      - name: Package Windows application
+      - name: Restore signing certificate
         shell: pwsh
-        run: node node_modules\@electron\packager\bin\electron-packager.js . myholypoly --platform=win32 --arch=x64 --out=release --overwrite --icon=assets/myholypoly.ico --ignore=release
+        run: |
+          $bytes = [Convert]::FromBase64String("${{ secrets.WINDOWS_SIGNING_PFX_BASE64 }}")
+          [IO.File]::WriteAllBytes("$env:RUNNER_TEMP\magune-lab-code-signing.pfx", $bytes)
 
-      - name: Create ZIP archive
+      - name: Create signed APPX installer
         shell: pwsh
-        run: Compress-Archive -LiteralPath release\myholypoly-win32-x64 -DestinationPath release\myholypoly-windows-x64-${{ github.ref_name }}.zip -CompressionLevel Optimal
+        env:
+          CSC_LINK: ${{ runner.temp }}\magune-lab-code-signing.pfx
+          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PASSWORD }}
+        run: pnpm run package:msix
 
       - name: Publish GitHub Release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" "release\myholypoly-windows-x64-${{ github.ref_name }}.zip" `
+          $installer = Get-ChildItem "release-msix\myholypoly-windows-x64-*.appx" | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $installer) { throw "APPX installer was not created." }
+          gh release create "${{ github.ref_name }}" $installer "distribution\magune-lab.cer" `
             --title "myholypoly ${{ github.ref_name }}" `
             --notes "Windows용 e-POLY 숙제 플래너 릴리즈입니다. 최신 기능 개선과 오류 수정을 포함합니다."
