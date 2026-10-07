@@ -14,6 +14,14 @@ contextBridge.exposeInMainWorld('myholypoly', {
     openCalendar: () => ipcRenderer.invoke('epoly:open-calendar'),
     openInstallGuide: () => ipcRenderer.invoke('epoly:open-install-guide')
   },
+  ai: {
+    keyStatus: () => ipcRenderer.invoke('ai:key-status'),
+    saveKey: key => ipcRenderer.invoke('ai:save-key', key),
+    deleteKey: () => ipcRenderer.invoke('ai:delete-key'),
+    suggest: text => ipcRenderer.invoke('ai:suggest', text),
+    openApiKeys: () => ipcRenderer.invoke('ai:open-api-keys'),
+    openGuide: () => ipcRenderer.invoke('ai:open-guide')
+  },
   plan: {
     read: () => ipcRenderer.invoke('plan:read'),
     register: draft => ipcRenderer.invoke('plan:register', draft),

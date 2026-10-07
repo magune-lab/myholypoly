@@ -13,6 +13,41 @@ async function toggleMaximize() {
 }
 $('#maximizeApp').onclick = toggleMaximize;
 document.querySelector('.brand').ondblclick = toggleMaximize;
+const aiSettingsDialog = $('#aiSettingsDialog');
+function updateAiSettingsButton(configured) { $('#aiSettings').textContent = configured ? '✨ AI 연결됨' : '✨ AI 설정'; }
+async function openAiSettings() {
+  $('#geminiApiKey').value = '';
+  $('#aiKeyStatus').textContent = '확인 중…';
+  aiSettingsDialog.showModal();
+  try {
+    const { configured } = await bridge.ai.keyStatus();
+    updateAiSettingsButton(configured);
+    $('#aiKeyStatus').textContent = configured ? 'API 키가 안전하게 등록되어 있습니다.' : '등록된 API 키가 없습니다.';
+    $('#deleteAiKey').hidden = !configured;
+  } catch (error) { $('#aiKeyStatus').textContent = error.message; }
+}
+$('#aiSettings').onclick = openAiSettings;
+$('#closeAiSettings').onclick = () => aiSettingsDialog.close();
+$('#cancelAiSettings').onclick = () => aiSettingsDialog.close();
+$('#openApiKeys').onclick = () => bridge.ai.openApiKeys();
+$('#openGeminiGuide').onclick = () => bridge.ai.openGuide();
+$('#saveAiKey').onclick = async () => {
+  try {
+    await bridge.ai.saveKey($('#geminiApiKey').value);
+    $('#geminiApiKey').value = '';
+    $('#aiKeyStatus').textContent = 'API 키를 암호화하여 저장했습니다.';
+    $('#deleteAiKey').hidden = false;
+    updateAiSettingsButton(true);
+  } catch (error) { $('#aiKeyStatus').textContent = error.message; }
+};
+$('#deleteAiKey').onclick = async () => {
+  await bridge.ai.deleteKey();
+  $('#geminiApiKey').value = '';
+  $('#aiKeyStatus').textContent = '등록된 API 키를 삭제했습니다.';
+  $('#deleteAiKey').hidden = true;
+  updateAiSettingsButton(false);
+};
+bridge.ai.keyStatus().then(({ configured }) => updateAiSettingsButton(configured)).catch(() => updateAiSettingsButton(false));
 let source = 'manual';
 let courses = [];
 let activeCourseIndex = 0;
@@ -31,6 +66,7 @@ let hideCompleted = localStorage.getItem(hideCompletedStorageKey) === 'true';
 let registerStep = 1;
 let statusRefreshPromise = null;
 const maxCourses = 5;
+const expandedComparisons = new Set();
 const lines = course => String(course.detail || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
 const isItemComplete = item => { const itemLines = lines(item); return itemLines.length > 0 && itemLines.every((_, index) => Boolean(item.done?.[index])); };
 const escapeHtml = value => String(value || '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
@@ -122,18 +158,60 @@ function renderCourses() {
   activeCourseIndex = Math.min(activeCourseIndex, courses.length - 1);
   editor.innerHTML = courses.map((course, courseIndex) => {
     const itemLines = String(course.detail || '').split(/\r?\n/);
-    return `<article class="stacked-course ${courseIndex === activeCourseIndex ? 'active' : ''}" data-course="${courseIndex}"><div class="stacked-course-head"><input data-course-title="${courseIndex}" value="${escapeHtml(course.title)}" placeholder="과목 이름" aria-label="${courseIndex + 1}번째 과목 이름"><label>마감일 <input data-course-due="${courseIndex}" class="custom-date-input" type="text" readonly value="${escapeHtml(course.dueDate)}" aria-label="${courseIndex + 1}번째 과목 마감일"></label></div><div class="focus-course-lines">${itemLines.map((line, lineIndex) => `<label class="focus-course-line"><span>${String(lineIndex + 1).padStart(2, '0')}</span><input data-course-line="${courseIndex}" data-line="${lineIndex}" value="${escapeHtml(line)}" placeholder="할 일"><button type="button" data-remove-line="${courseIndex}:${lineIndex}" aria-label="항목 삭제">삭제</button></label>`).join('')}</div><button class="add-focus-line" data-add-line="${courseIndex}" type="button">＋ 내용 추가</button></article>`;
+    const originalLines = course.originalLines || itemLines;
+    const refinedLines = course.refinedLines || [];
+    const taskMarkup = itemLines.map((line, lineIndex) => {
+      const refined = Boolean(refinedLines[lineIndex]) && String(originalLines[lineIndex] || '') !== line;
+      const comparisonKey = `${courseIndex}:${lineIndex}`;
+      const comparison = refined && expandedComparisons.has(comparisonKey)
+        ? `<div class="ai-comparison"><div class="ai-comparison-columns"><div><b>원본</b><p>${escapeHtml(originalLines[lineIndex] || '')}</p></div><div><b>다듬은 내용</b><p>${escapeHtml(line)}</p></div></div><div class="ai-comparison-actions"><button type="button" data-restore-original="${comparisonKey}">원본으로 복원</button><button type="button" data-ai-suggest="${comparisonKey}">다시 다듬기</button><button type="button" data-close-comparison="${comparisonKey}">비교 닫기</button></div></div>`
+        : '';
+      const aiAction = refined
+        ? `<button type="button" class="ai-compare-line" data-toggle-comparison="${comparisonKey}" aria-expanded="${expandedComparisons.has(comparisonKey)}">원문 비교</button>`
+        : `<button type="button" class="ai-suggest-line" data-ai-suggest="${comparisonKey}">✨ 다듬기</button>`;
+      return `<div class="focus-course-entry"><label class="focus-course-line"><span>${String(lineIndex + 1).padStart(2, '0')}</span><span class="task-input-wrap"><input data-course-line="${courseIndex}" data-line="${lineIndex}" value="${escapeHtml(line)}" placeholder="할 일">${refined ? '<small>✨ AI로 다듬은 문구</small>' : ''}</span>${aiAction}<button type="button" data-remove-line="${comparisonKey}" aria-label="항목 삭제">삭제</button></label>${comparison}</div>`;
+    }).join('');
+    return `<article class="stacked-course ${courseIndex === activeCourseIndex ? 'active' : ''}" data-course="${courseIndex}"><div class="stacked-course-head"><input data-course-title="${courseIndex}" value="${escapeHtml(course.title)}" placeholder="과목 이름" aria-label="${courseIndex + 1}번째 과목 이름"><label>마감일 <input data-course-due="${courseIndex}" class="custom-date-input" type="text" readonly value="${escapeHtml(course.dueDate)}" aria-label="${courseIndex + 1}번째 과목 마감일"></label></div><div class="focus-course-lines">${taskMarkup}</div><button class="add-focus-line" data-add-line="${courseIndex}" type="button">＋ 내용 추가</button></article>`;
   }).join('');
   const selectCourse = index => { activeCourseIndex = index; editor.querySelectorAll('.stacked-course').forEach((card, cardIndex) => card.classList.toggle('active', cardIndex === index)); };
   editor.querySelectorAll('.stacked-course').forEach((card, index) => card.onclick = () => selectCourse(index));
   editor.querySelectorAll('[data-course-title]').forEach(input => input.oninput = event => { const index = Number(event.target.dataset.courseTitle); courses[index].title = event.target.value; selectCourse(index); });
   editor.querySelectorAll('[data-course-due]').forEach(input => { input.oninput = event => { const index = Number(event.target.dataset.courseDue); courses[index].dueDate = event.target.value; selectCourse(index); }; bindDatePicker(input); });
-  editor.querySelectorAll('[data-course-line]').forEach(input => input.oninput = event => { const index = Number(event.target.dataset.courseLine); const card = event.target.closest('.stacked-course'); courses[index].detail = [...card.querySelectorAll('[data-course-line]')].map(node => node.value).join('\n'); selectCourse(index); });
-  editor.querySelectorAll('[data-remove-line]').forEach(button => button.onclick = event => { event.stopPropagation(); const [courseIndex, lineIndex] = button.dataset.removeLine.split(':').map(Number); const card = button.closest('.stacked-course'); const values = [...card.querySelectorAll('[data-course-line]')].map(node => node.value); values.splice(lineIndex, 1); courses[courseIndex].detail = values.join('\n'); activeCourseIndex = courseIndex; renderCourses(); });
-  editor.querySelectorAll('[data-add-line]').forEach(button => button.onclick = event => { event.stopPropagation(); const index = Number(button.dataset.addLine); const course = courses[index]; course.detail = `${course.detail}${course.detail ? '\n' : ''}새 항목`; activeCourseIndex = index; renderCourses(); const card = editor.querySelector(`[data-course="${index}"]`); const inputs = card.querySelectorAll('[data-course-line]'); inputs[inputs.length - 1].focus(); inputs[inputs.length - 1].select(); });
+  editor.querySelectorAll('[data-course-line]').forEach(input => input.oninput = event => { const index = Number(event.target.dataset.courseLine); const lineIndex = Number(event.target.dataset.line); const card = event.target.closest('.stacked-course'); if (!courses[index].refinedLines?.[lineIndex]) courses[index].originalLines[lineIndex] = event.target.value; courses[index].detail = [...card.querySelectorAll('[data-course-line]')].map(node => node.value).join('\n'); selectCourse(index); });
+  editor.querySelectorAll('[data-ai-suggest]').forEach(button => button.onclick = async event => {
+    event.preventDefault(); event.stopPropagation();
+    const [courseIndex, lineIndex] = button.dataset.aiSuggest.split(':').map(Number);
+    const course = courses[courseIndex];
+    const input = editor.querySelector(`[data-course-line="${courseIndex}"][data-line="${lineIndex}"]`);
+    const original = (course.refinedLines?.[lineIndex] ? course.originalLines?.[lineIndex] : input?.value).trim();
+    if (!original) return setMessage('AI로 다듬을 할 일 문구를 먼저 입력해 주세요.', true);
+    const previousLabel = button.textContent;
+    button.disabled = true; button.textContent = '생성 중';
+    try {
+      const { configured } = await bridge.ai.keyStatus();
+      if (!configured) { await openAiSettings(); return; }
+      const result = await bridge.ai.suggest(original);
+      if (window.confirm(`다듬은 문구를 적용할까요?\n\n${result.text}`)) {
+        if (!course.refinedLines[lineIndex]) course.originalLines[lineIndex] = input.value.trim();
+        const values = String(course.detail || '').split(/\r?\n/);
+        values[lineIndex] = result.text;
+        course.detail = values.join('\n');
+        course.refinedLines[lineIndex] = true;
+        expandedComparisons.add(`${courseIndex}:${lineIndex}`);
+        setMessage('다듬은 문구를 적용했습니다. 원문 비교에서 언제든 확인하거나 복원할 수 있습니다.');
+        renderCourses();
+      }
+    } catch (error) { setMessage(error.message, true); }
+    finally { button.disabled = false; button.textContent = previousLabel; }
+  });
+  editor.querySelectorAll('[data-toggle-comparison]').forEach(button => button.onclick = event => { event.preventDefault(); event.stopPropagation(); const key = button.dataset.toggleComparison; if (expandedComparisons.has(key)) expandedComparisons.delete(key); else expandedComparisons.add(key); renderCourses(); });
+  editor.querySelectorAll('[data-close-comparison]').forEach(button => button.onclick = event => { event.stopPropagation(); expandedComparisons.delete(button.dataset.closeComparison); renderCourses(); });
+  editor.querySelectorAll('[data-restore-original]').forEach(button => button.onclick = event => { event.stopPropagation(); const [courseIndex, lineIndex] = button.dataset.restoreOriginal.split(':').map(Number); const course = courses[courseIndex]; const values = String(course.detail || '').split(/\r?\n/); values[lineIndex] = course.originalLines[lineIndex] || ''; course.detail = values.join('\n'); course.refinedLines[lineIndex] = false; expandedComparisons.delete(`${courseIndex}:${lineIndex}`); setMessage('원본 문구로 복원했습니다.'); renderCourses(); });
+  editor.querySelectorAll('[data-remove-line]').forEach(button => button.onclick = event => { event.stopPropagation(); const [courseIndex, lineIndex] = button.dataset.removeLine.split(':').map(Number); const course = courses[courseIndex]; const values = String(course.detail || '').split(/\r?\n/); values.splice(lineIndex, 1); course.originalLines.splice(lineIndex, 1); course.refinedLines.splice(lineIndex, 1); course.detail = values.join('\n'); expandedComparisons.clear(); activeCourseIndex = courseIndex; renderCourses(); });
+  editor.querySelectorAll('[data-add-line]').forEach(button => button.onclick = event => { event.stopPropagation(); const index = Number(button.dataset.addLine); const course = courses[index]; course.detail = `${course.detail}${course.detail ? '\n' : ''}새 항목`; course.originalLines.push('새 항목'); course.refinedLines.push(false); activeCourseIndex = index; renderCourses(); const card = editor.querySelector(`[data-course="${index}"]`); const inputs = card.querySelectorAll('[data-course-line]'); inputs[inputs.length - 1].focus(); inputs[inputs.length - 1].select(); });
   $('#deleteCourse').onclick = () => {
     if (courses.length <= 1) {
-      courses = [{ title: '', detail: '', dueDate: '', startDate: $('#planDate').value }];
+      courses = [{ title: '', detail: '', originalLines: [''], refinedLines: [false], dueDate: '', startDate: $('#planDate').value }];
       activeCourseIndex = 0;
     } else {
       courses.splice(activeCourseIndex, 1);
@@ -142,8 +220,8 @@ function renderCourses() {
     renderCourses();
   };
 }
-function setCourses(items) { courses = items.map(item => ({ title: item.title || '', detail: item.detail || '', dueDate: item.dueDate || '', startDate: item.startDate || '' })); activeCourseIndex = 0; renderCourses(); }
-function draft() { return { date: $('#planDate').value, source, items: courses.filter(course => course.title).map(course => ({ title: course.title, detail: course.detail, dueDate: course.dueDate, startDate: course.startDate || $('#planDate').value })) }; }
+function setCourses(items) { expandedComparisons.clear(); courses = items.map(item => { const detail = item.detail || ''; const itemLines = String(detail).split(/\r?\n/); const originals = Array.isArray(item.originalLines) ? item.originalLines : String(item.originalDetail ?? detail).split(/\r?\n/); return { title: item.title || '', detail, originalLines: itemLines.map((line, index) => originals[index] ?? line), refinedLines: itemLines.map((line, index) => Boolean(item.refinedLines?.[index]) && originals[index] !== line), dueDate: item.dueDate || '', startDate: item.startDate || '' }; }); activeCourseIndex = 0; renderCourses(); }
+function draft() { return { date: $('#planDate').value, source, items: courses.filter(course => course.title).map(course => ({ title: course.title, detail: course.detail, originalDetail: course.originalLines.join('\n'), refinedLines: course.refinedLines, dueDate: course.dueDate, startDate: course.startDate || $('#planDate').value })) }; }
 function setEditingMode(target = null) { editingTarget = target; const editing = Boolean(target); $('#addTask').hidden = editing; $('#deleteCourse').hidden = editing; $('#planDate').disabled = editing; $('#register').textContent = editing ? '수정 저장' : '일정 등록'; }
 const dateValue = value => value ? new Date(`${value}T00:00:00`) : null;
 const formatDate = value => value ? value.slice(5).replace('-', '.') : '마감일 없음';
@@ -272,7 +350,7 @@ $('#datePickerToday').onclick = event => { event.stopPropagation(); if (!activeD
 $('#datePickerClear').onclick = event => { event.stopPropagation(); if (!activeDateInput) return; activeDateInput.value = ''; activeDateInput.dispatchEvent(new Event('input', { bubbles: true })); closeDatePicker(); };
 $('#datePickerPopover').onclick = event => event.stopPropagation();
 document.addEventListener('click', closeDatePicker);
-$('#addTask').onclick = () => { if (courses.length >= maxCourses) { setMessage(`과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, true); return setStepMessage(4, `과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, 'error'); } courses.push({ title: '', detail: '', dueDate: '', startDate: $('#planDate').value }); activeCourseIndex = courses.length - 1; renderCourses(); requestAnimationFrame(() => $('#courseEditor .stacked-course:last-child')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })); };
+$('#addTask').onclick = () => { if (courses.length >= maxCourses) { setMessage(`과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, true); return setStepMessage(4, `과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, 'error'); } courses.push({ title: '', detail: '', originalLines: [''], refinedLines: [false], dueDate: '', startDate: $('#planDate').value }); activeCourseIndex = courses.length - 1; renderCourses(); requestAnimationFrame(() => $('#courseEditor .stacked-course:last-child')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })); };
 $('#launchEpoly').onclick = async () => { setStepMessage(1, 'e-POLY를 실행하고 있습니다.'); try { await bridge.epoly.launch(); setStepMessage(1, 'e-POLY를 실행했습니다.', 'success'); setRegisterStep(2); setMessage('e-POLY를 여는 중입니다.'); setTimeout(() => refreshStatus().catch(error => setStepMessage(1, error.message, 'error')), 1500); } catch (error) { setMessage(error.message, true); setStepMessage(1, error.message, 'error'); } };
 $('#openEpolyInstallGuide').onclick = () => bridge.epoly.openInstallGuide();
 $('#openCalendar').onclick = async () => { setStepMessage(2, '캘린더를 열고 있습니다.'); try { const result = await bridge.epoly.openCalendar(); if (!result.opened) { setMessage(result.message, true); return setStepMessage(2, result.message, 'error'); } setStepMessage(2, '캘린더를 열었습니다.', 'success'); setRegisterStep(3); setMessage('e-POLY 캘린더를 여는 중입니다.'); setTimeout(() => refreshStatus().catch(error => setStepMessage(2, error.message, 'error')), 1200); } catch (error) { setMessage(error.message, true); setStepMessage(2, error.message, 'error'); } };

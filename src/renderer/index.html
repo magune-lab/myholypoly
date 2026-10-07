@@ -51,7 +51,7 @@
         <section class="focus-register" aria-label="일정 편집">
           <div class="focus-register-body">
             <section class="course-workspace">
-              <div class="course-toolbar"><div><strong>과목 편집</strong><span id="sourceLabel">직접 입력</span></div><div class="course-toolbar-actions"><button id="addTask" type="button">＋ 과목 추가</button><button id="deleteCourse" type="button">선택 과목 삭제</button><button id="register" type="button" class="primary">일정 등록</button></div></div>
+              <div class="course-toolbar"><div><strong>과목 편집</strong><span id="sourceLabel">직접 입력</span></div><div class="course-toolbar-actions"><button id="aiSettings" type="button">AI 설정</button><button id="addTask" type="button">＋ 과목 추가</button><button id="deleteCourse" type="button">선택 과목 삭제</button><button id="register" type="button" class="primary">일정 등록</button></div></div>
               <div id="courseEditor" class="course-stack"></div>
               <div class="workspace-footer"><p id="message" class="message" role="status"></p></div>
             </section>
@@ -65,6 +65,22 @@
         <section class="notes-panel"><div id="notesList" class="notes-list"></div></section>
       </section>
     </main>
+    <dialog id="aiSettingsDialog" class="ai-settings-dialog" aria-labelledby="aiSettingsTitle">
+      <form method="dialog" class="ai-settings-card">
+        <div class="ai-settings-head"><div><span>문구 다듬기</span><h2 id="aiSettingsTitle">Gemini AI 설정</h2></div><button id="closeAiSettings" type="button" aria-label="AI 설정 닫기">×</button></div>
+        <p class="ai-settings-description">과목명은 그대로 두고, 각 할 일의 의미·교재명·페이지·날짜는 유지하면서 불필요한 문구와 줄바꿈을 읽기 좋게 정리합니다.</p>
+        <ol class="ai-key-guide">
+          <li><button id="openApiKeys" type="button">Google AI Studio 열기</button>에서 <b>Create API key</b>를 선택하세요.</li>
+          <li>생성된 키를 복사해 아래에 입력하고 저장하세요.</li>
+          <li>자세한 내용은 <button id="openGeminiGuide" type="button">Gemini API 키 가이드</button>에서 확인할 수 있습니다.</li>
+        </ol>
+        <p class="ai-key-cost">Gemini API는 프로젝트 한도에 따라 무료로 시작할 수 있으며, 더 많은 사용량이 필요할 때만 Google Cloud 결제를 설정하면 됩니다.</p>
+        <label class="ai-key-field"><span>Gemini API 키</span><input id="geminiApiKey" type="password" autocomplete="off" placeholder="Google AI Studio에서 발급받은 키"></label>
+        <p id="aiKeyStatus" class="ai-key-status" role="status"></p>
+        <p class="ai-key-security">키는 이 PC의 Windows 암호화 저장소에만 보관됩니다. 채팅이나 다른 사람에게 공유하지 마세요.</p>
+        <div class="ai-settings-actions"><button id="deleteAiKey" type="button" class="danger">등록 키 삭제</button><span></span><button id="cancelAiSettings" type="button">취소</button><button id="saveAiKey" type="button" class="primary">키 저장</button></div>
+      </form>
+    </dialog>
     <div id="datePickerPopover" class="date-picker-popover" hidden>
       <div class="date-picker-head"><select id="datePickerYearSelect" aria-label="연도 선택"></select><select id="datePickerMonthSelect" aria-label="월 선택"></select></div>
       <div class="date-picker-week"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
