@@ -8,9 +8,6 @@ importers:
 
   .:
     devDependencies:
-      '@electron/asar':
-        specifier: 3.2.18
-        version: 3.2.18
       '@electron/packager':
         specifier: 18.3.6
         version: 18.3.6(supports-color@7.2.0)
@@ -25,11 +22,6 @@ importers:
         version: 1.0.0
 
 packages:
-
-  '@electron/asar@3.2.18':
-    resolution: {integrity: sha512-2XyvMe3N3Nrs8cV39IKELRHTYUWFKrmqqSY1U+GMlc0jvqjIVnoxhNd2H4JolWQncbJi1DCvb5TNxZuI2fEjWg==}
-    engines: {node: '>=10.12.0'}
-    hasBin: true
 
   '@electron/asar@3.4.1':
     resolution: {integrity: sha512-i4/rNPRS84t0vSRa2HorerGRXWyF4vThfHesw0dmcWHp+cspK743UanA0suA5Q5y8kzY2y6YKrvbIUn69BCAiA==}
@@ -1235,12 +1227,6 @@ packages:
 
 snapshots:
 
-  '@electron/asar@3.2.18':
-    dependencies:
-      commander: 5.1.0
-      glob: 7.2.3
-      minimatch: 3.1.5
-
   '@electron/asar@3.4.1':
     dependencies:
       commander: 5.1.0
@@ -1768,7 +1754,7 @@ snapshots:
 
   electron-winstaller@5.4.0(supports-color@7.2.0):
     dependencies:
-      '@electron/asar': 3.2.18
+      '@electron/asar': 3.4.1
       debug: 4.4.3(supports-color@7.2.0)
       fs-extra: 7.0.1
       lodash: 4.18.1

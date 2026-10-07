@@ -93,12 +93,17 @@ export async function captureOpenHomework() {
 }
 export async function openCalendar() {
   const pages = await targets();
-  const page = pages.find(candidate => candidate.type === 'page');
+  const page = pages.find(candidate => candidate.type === 'page' && /portal\.koreapolyschool\.com/i.test(candidate.url || ''))
+    || pages.find(candidate => candidate.type === 'page');
   if (!page) return { opened: false, message: 'e-POLY 창을 찾지 못했습니다.' };
   const result = await evaluate(page, `(() => {
-    const session = new URL(location.href).searchParams.get('sv');
-    if (!session) return { opened: false, message: '로그인된 e-POLY 화면을 찾지 못했습니다.' };
-    location.assign('https://portal.koreapolyschool.com/front/polyLife/Calendar.jsp?sv=' + encodeURIComponent(session));
+    const current = new URL(location.href);
+    const session = current.searchParams.get('sv');
+    const isPortalPage = current.hostname === 'portal.koreapolyschool.com' && current.pathname.toLowerCase().startsWith('/front/');
+    if (!session && !isPortalPage) return { opened: false, message: '로그인된 e-POLY 화면을 찾지 못했습니다.' };
+    const calendar = new URL('https://portal.koreapolyschool.com/front/polyLife/Calendar.jsp');
+    if (session) calendar.searchParams.set('sv', session);
+    location.assign(calendar.href);
     return { opened: true };
   })()`);
   return result || { opened: false, message: '캘린더를 열지 못했습니다.' };

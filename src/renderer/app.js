@@ -2,6 +2,8 @@ const $ = selector => document.querySelector(selector);
 const now = new Date();
 const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
 const bridge = window.myholypoly;
+bridge.appInfo.read().then(({ version }) => { $('#appVersion').textContent = `v${version}`; }).catch(() => {});
+$('#openGithubRepository').onclick = event => { event.preventDefault(); bridge.appInfo.openRepository(); };
 $('#minimizeApp').onclick = () => bridge.windowControls.minimize();
 $('#closeApp').onclick = () => window.close();
 async function toggleMaximize() {
@@ -12,16 +14,23 @@ async function toggleMaximize() {
   $('#maximizeApp').setAttribute('aria-label', maximized ? '창 이전 크기' : '창 최대화');
 }
 $('#maximizeApp').onclick = toggleMaximize;
-document.querySelector('.brand').ondblclick = toggleMaximize;
+const brand = document.querySelector('.brand');
+if (brand) brand.ondblclick = toggleMaximize;
 const aiSettingsDialog = $('#aiSettingsDialog');
-function updateAiSettingsButton(configured) { $('#aiSettings').textContent = configured ? '✨ AI 연결됨' : '✨ AI 설정'; }
+function updateAiSettingsButton(configured) {
+  const state = $('#aiConnectionState');
+  state.classList.toggle('connected', configured);
+  state.innerHTML = `<i aria-hidden="true"></i>${configured ? 'AI 자동 정리 사용 중' : 'AI 자동 정리 꺼짐'}`;
+  $('#aiSettings').textContent = '설정';
+}
 async function openAiSettings() {
   $('#geminiApiKey').value = '';
   $('#aiKeyStatus').textContent = '확인 중…';
   aiSettingsDialog.showModal();
   try {
-    const { configured } = await bridge.ai.keyStatus();
+    const [{ configured }, { rules }] = await Promise.all([bridge.ai.keyStatus(), bridge.ai.readRules()]);
     updateAiSettingsButton(configured);
+    $('#aiCustomRules').value = rules || '';
     $('#aiKeyStatus').textContent = configured ? 'API 키가 안전하게 등록되어 있습니다.' : '등록된 API 키가 없습니다.';
     $('#deleteAiKey').hidden = !configured;
   } catch (error) { $('#aiKeyStatus').textContent = error.message; }
@@ -33,11 +42,24 @@ $('#openApiKeys').onclick = () => bridge.ai.openApiKeys();
 $('#openGeminiGuide').onclick = () => bridge.ai.openGuide();
 $('#saveAiKey').onclick = async () => {
   try {
-    await bridge.ai.saveKey($('#geminiApiKey').value);
+    const key = $('#geminiApiKey').value.trim();
+    if (key) await bridge.ai.saveKey(key);
+    else {
+      const { configured } = await bridge.ai.keyStatus();
+      if (!configured) throw new Error('Gemini API 키를 입력해 주세요.');
+    }
+    await bridge.ai.saveRules($('#aiCustomRules').value);
     $('#geminiApiKey').value = '';
-    $('#aiKeyStatus').textContent = 'API 키를 암호화하여 저장했습니다.';
+    $('#aiKeyStatus').textContent = 'API 키와 AI 정리 규칙을 저장했습니다.';
     $('#deleteAiKey').hidden = false;
     updateAiSettingsButton(true);
+  } catch (error) { $('#aiKeyStatus').textContent = error.message; }
+};
+$('#resetAiRules').onclick = async () => {
+  try {
+    await bridge.ai.resetRules();
+    $('#aiCustomRules').value = '';
+    $('#aiKeyStatus').textContent = '추가 정리 규칙을 초기화했습니다. 기본 규칙은 계속 적용됩니다.';
   } catch (error) { $('#aiKeyStatus').textContent = error.message; }
 };
 $('#deleteAiKey').onclick = async () => {
@@ -67,20 +89,19 @@ let registerStep = 1;
 let statusRefreshPromise = null;
 const maxCourses = 5;
 const expandedComparisons = new Set();
+const expandedOriginalCourses = new Set();
 const lines = course => String(course.detail || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
 const isItemComplete = item => { const itemLines = lines(item); return itemLines.length > 0 && itemLines.every((_, index) => Boolean(item.done?.[index])); };
 const escapeHtml = value => String(value || '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const coursePalettes = [
-  { bg: '#DB5A8B', border: '#C94173', soft: '#FBEAF1', text: '#A93260' },
-  { bg: '#35A77B', border: '#278E68', soft: '#E7F6F0', text: '#247D5D' },
-  { bg: '#5578D8', border: '#4265C3', soft: '#EAF0FC', text: '#355AB8' },
-  { bg: '#7B5CE5', border: '#6748D2', soft: '#F0ECFD', text: '#6042CA' },
-  { bg: '#DEA13C', border: '#BF8124', soft: '#FFF4D9', text: '#916018' },
-  { bg: '#E66F55', border: '#CF5941', soft: '#FDEDE8', text: '#B54A35' },
-  { bg: '#2797B8', border: '#1C819F', soft: '#E6F5F9', text: '#1D748D' },
-  { bg: '#8A6B4E', border: '#74563C', soft: '#F5EEE8', text: '#684A33' },
-  { bg: '#7A9E36', border: '#63852A', soft: '#F0F6E4', text: '#577525' },
-  { bg: '#B365C5', border: '#994EAC', soft: '#F7EBFA', text: '#874299' }
+  { bg: '#FF9EC0', border: '#1B2845', soft: '#FFE8F0', text: '#1B2845' },
+  { bg: '#7DB2FF', border: '#1B2845', soft: '#E7F1FF', text: '#1B2845' },
+  { bg: '#FFD84D', border: '#1B2845', soft: '#FFF5C9', text: '#1B2845' },
+  { bg: '#FFB88A', border: '#1B2845', soft: '#FFF0E6', text: '#1B2845' },
+  { bg: '#5ED6A0', border: '#1B2845', soft: '#E2F9EF', text: '#1B2845' },
+  { bg: '#B79CFF', border: '#1B2845', soft: '#EEE8FF', text: '#1B2845' },
+  { bg: '#70D6E8', border: '#1B2845', soft: '#E3F8FB', text: '#1B2845' },
+  { bg: '#FF8E7B', border: '#1B2845', soft: '#FFE9E5', text: '#1B2845' }
 ];
 function courseKey(title, dueDate) { return `${title || ''}|${dueDate || ''}`; }
 function coursePalette(title = '') {
@@ -101,12 +122,28 @@ function coursePaletteMap(items) {
 let activeDateInput = null;
 let pickerYear = now.getFullYear();
 let pickerMonth = now.getMonth();
+let datePickerStage = 'months';
 function isoDate(year, month, day) { return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; }
+function homeworkMonths(year) {
+  return new Set(allItems().flatMap(item => [item.startDate || item.date, item.dueDate]).filter(Boolean).filter(value => Number(value.slice(0, 4)) === year).map(value => Number(value.slice(5, 7))));
+}
 function renderDatePicker() {
-  $('#datePickerYearSelect').innerHTML = Array.from({ length: 11 }, (_, index) => pickerYear - 5 + index).map(year => `<option value="${year}">${year}년</option>`).join('');
-  $('#datePickerYearSelect').value = String(pickerYear);
-  $('#datePickerMonthSelect').innerHTML = Array.from({ length: 12 }, (_, index) => `<option value="${index}">${index + 1}월</option>`).join('');
-  $('#datePickerMonthSelect').value = String(pickerMonth);
+  const selectingMonth = datePickerStage === 'months';
+  $('#datePickerHeading').textContent = selectingMonth ? `${pickerYear}년` : `${pickerYear}년 ${pickerMonth + 1}월`;
+  $('#datePickerMonths').hidden = !selectingMonth;
+  $('#datePickerBackToMonths').hidden = selectingMonth;
+  $('.date-picker-week').hidden = selectingMonth;
+  $('#datePickerDays').hidden = selectingMonth;
+  const markedMonths = homeworkMonths(pickerYear);
+  $('#datePickerMonths').innerHTML = Array.from({ length: 12 }, (_, index) => {
+    const month = index + 1;
+    const selected = pickerMonth === index;
+    return `<button type="button" data-picker-month="${index}" class="${selected ? 'selected' : ''}">${month}월${markedMonths.has(month) ? '<i></i>' : ''}</button>`;
+  }).join('');
+  $('#datePickerMonths').querySelectorAll('button').forEach(button => button.onclick = event => {
+    event.stopPropagation(); pickerMonth = Number(button.dataset.pickerMonth); datePickerStage = 'days'; renderDatePicker();
+  });
+  if (selectingMonth) return;
   const firstDay = new Date(pickerYear, pickerMonth, 1).getDay();
   const days = new Date(pickerYear, pickerMonth + 1, 0).getDate();
   const previousDays = new Date(pickerYear, pickerMonth, 0).getDate();
@@ -120,7 +157,8 @@ function renderDatePicker() {
     if (month < 0) { month = 11; year -= 1; }
     if (month > 11) { month = 0; year += 1; }
     const value = isoDate(year, month, day);
-    cells.push(`<button type="button" data-date="${value}" class="${outside ? 'outside' : ''} ${value === selected ? 'selected' : ''} ${value === today ? 'today' : ''}">${day}</button>`);
+    const scheduled = allItems().some(item => [item.startDate || item.date, item.dueDate].includes(value));
+    cells.push(`<button type="button" data-date="${value}" class="${outside ? 'outside' : ''} ${value === selected ? 'selected' : ''} ${value === today ? 'today' : ''}"><span>${day}</span>${scheduled ? '<i></i>' : ''}</button>`);
   }
   $('#datePickerDays').innerHTML = cells.join('');
   $('#datePickerDays').querySelectorAll('button').forEach(button => button.onclick = event => {
@@ -135,13 +173,14 @@ function openDatePicker(input) {
   activeDateInput = input;
   const value = input.value ? new Date(`${input.value}T00:00:00`) : new Date();
   pickerYear = value.getFullYear(); pickerMonth = value.getMonth();
+  datePickerStage = 'months';
   renderDatePicker();
   const popover = $('#datePickerPopover');
   popover.hidden = false;
   const rect = input.getBoundingClientRect();
-  const width = 276;
+  const width = 238;
   popover.style.left = `${Math.max(12, Math.min(rect.left, window.innerWidth - width - 12))}px`;
-  popover.style.top = `${Math.min(rect.bottom + 7, window.innerHeight - 342)}px`;
+  popover.style.top = `${Math.max(12, Math.min(rect.bottom + 9, window.innerHeight - popover.offsetHeight - 12))}px`;
 }
 function closeDatePicker() { $('#datePickerPopover').hidden = true; activeDateInput = null; }
 function bindDatePicker(input) { input.onclick = event => { event.stopPropagation(); openDatePicker(input); }; input.onkeydown = event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openDatePicker(input); } if (event.key === 'Escape') closeDatePicker(); }; }
@@ -160,53 +199,31 @@ function renderCourses() {
     const itemLines = String(course.detail || '').split(/\r?\n/);
     const originalLines = course.originalLines || itemLines;
     const refinedLines = course.refinedLines || [];
+    const originalDetail = (course.originalLines || []).join('\n');
+    const aiRefined = originalDetail.trim() !== String(course.detail || '').trim();
+    const palette = coursePalette(course.title || `과목 ${courseIndex + 1}`);
+    const taskCount = Math.max(1, itemLines.filter(line => line.trim()).length);
+    const dueDiff = course.dueDate ? Math.ceil((new Date(`${course.dueDate}T00:00:00`) - new Date(`${today}T00:00:00`)) / 86400000) : '';
+    const dueBadge = dueDiff === '' ? '마감일 없음' : dueDiff < 0 ? '기한 지남' : dueDiff === 0 ? 'D-day' : `D-${dueDiff}`;
     const taskMarkup = itemLines.map((line, lineIndex) => {
-      const refined = Boolean(refinedLines[lineIndex]) && String(originalLines[lineIndex] || '') !== line;
+      const refined = Boolean(refinedLines[lineIndex]);
       const comparisonKey = `${courseIndex}:${lineIndex}`;
-      const comparison = refined && expandedComparisons.has(comparisonKey)
-        ? `<div class="ai-comparison"><div class="ai-comparison-columns"><div><b>원본</b><p>${escapeHtml(originalLines[lineIndex] || '')}</p></div><div><b>다듬은 내용</b><p>${escapeHtml(line)}</p></div></div><div class="ai-comparison-actions"><button type="button" data-restore-original="${comparisonKey}">원본으로 복원</button><button type="button" data-ai-suggest="${comparisonKey}">다시 다듬기</button><button type="button" data-close-comparison="${comparisonKey}">비교 닫기</button></div></div>`
-        : '';
-      const aiAction = refined
-        ? `<button type="button" class="ai-compare-line" data-toggle-comparison="${comparisonKey}" aria-expanded="${expandedComparisons.has(comparisonKey)}">원문 비교</button>`
-        : `<button type="button" class="ai-suggest-line" data-ai-suggest="${comparisonKey}">✨ 다듬기</button>`;
-      return `<div class="focus-course-entry"><label class="focus-course-line"><span>${String(lineIndex + 1).padStart(2, '0')}</span><span class="task-input-wrap"><input data-course-line="${courseIndex}" data-line="${lineIndex}" value="${escapeHtml(line)}" placeholder="할 일">${refined ? '<small>✨ AI로 다듬은 문구</small>' : ''}</span>${aiAction}<button type="button" data-remove-line="${comparisonKey}" aria-label="항목 삭제">삭제</button></label>${comparison}</div>`;
+      return `<div class="focus-course-entry"><label class="focus-course-line"><span>${String(lineIndex + 1).padStart(2, '0')}</span><span class="task-input-wrap"><input data-course-line="${courseIndex}" data-line="${lineIndex}" value="${escapeHtml(line)}" placeholder="할 일"></span><button type="button" data-remove-line="${comparisonKey}" aria-label="항목 삭제">삭제</button></label></div>`;
     }).join('');
-    return `<article class="stacked-course ${courseIndex === activeCourseIndex ? 'active' : ''}" data-course="${courseIndex}"><div class="stacked-course-head"><input data-course-title="${courseIndex}" value="${escapeHtml(course.title)}" placeholder="과목 이름" aria-label="${courseIndex + 1}번째 과목 이름"><label>마감일 <input data-course-due="${courseIndex}" class="custom-date-input" type="text" readonly value="${escapeHtml(course.dueDate)}" aria-label="${courseIndex + 1}번째 과목 마감일"></label></div><div class="focus-course-lines">${taskMarkup}</div><button class="add-focus-line" data-add-line="${courseIndex}" type="button">＋ 내용 추가</button></article>`;
+    const showOriginal = aiRefined && expandedOriginalCourses.has(courseIndex);
+    const comparison = showOriginal ? `<div class="schedule-original-comparison"><div><b>불러온 원본</b><p>${escapeHtml(originalDetail).replace(/\n/g, '<br>')}</p></div><div><b>AI로 구성한 일정</b><p>${escapeHtml(course.detail).replace(/\n/g, '<br>')}</p></div><button type="button" data-restore-course="${courseIndex}">이 과목은 원본 사용</button></div>` : '';
+    const aiBadge = aiRefined ? '<span class="course-accordion-chip ai-organized-chip">AI 정리</span>' : '';
+    const originalButton = aiRefined ? `<button type="button" class="show-course-original" data-show-course-original="${courseIndex}" aria-expanded="${showOriginal}">${showOriginal ? '원본 닫기' : '원본 보기'}</button>` : '';
+    return `<article class="stacked-course ${courseIndex === activeCourseIndex ? 'active' : ''}" data-course="${courseIndex}" style="--course-bg:${palette.bg};--course-soft:${palette.soft}"><button type="button" class="course-accordion-head" data-toggle-course="${courseIndex}" aria-expanded="${courseIndex === activeCourseIndex}"><span class="course-accordion-number">${courseIndex + 1}</span><span class="course-accordion-summary"><strong class="course-accordion-name">${escapeHtml(course.title || '새 과목')}</strong><small>마감 ${course.dueDate ? formatDate(course.dueDate) : '미정'}</small></span>${aiBadge}<span class="course-accordion-chip">${dueBadge}</span><span class="course-accordion-chip">할 일 ${taskCount}개</span><span class="course-accordion-chevron" aria-hidden="true"></span></button><div class="course-accordion-body"><div class="course-original-tools">${originalButton}</div>${comparison}<div class="focus-course-lines">${taskMarkup}</div><button class="add-focus-line" data-add-line="${courseIndex}" type="button">＋ 내용 추가</button></div></article>`;
   }).join('');
-  const selectCourse = index => { activeCourseIndex = index; editor.querySelectorAll('.stacked-course').forEach((card, cardIndex) => card.classList.toggle('active', cardIndex === index)); };
+  const selectCourse = index => { activeCourseIndex = index; editor.querySelectorAll('.stacked-course').forEach((card, cardIndex) => { const active = cardIndex === index; card.classList.toggle('active', active); card.querySelector('.course-accordion-head')?.setAttribute('aria-expanded', String(active)); }); };
   editor.querySelectorAll('.stacked-course').forEach((card, index) => card.onclick = () => selectCourse(index));
-  editor.querySelectorAll('[data-course-title]').forEach(input => input.oninput = event => { const index = Number(event.target.dataset.courseTitle); courses[index].title = event.target.value; selectCourse(index); });
-  editor.querySelectorAll('[data-course-due]').forEach(input => { input.oninput = event => { const index = Number(event.target.dataset.courseDue); courses[index].dueDate = event.target.value; selectCourse(index); }; bindDatePicker(input); });
+  editor.querySelectorAll('[data-toggle-course]').forEach(button => button.onclick = event => { event.preventDefault(); event.stopPropagation(); selectCourse(Number(button.dataset.toggleCourse)); });
+  editor.querySelectorAll('[data-course-title]').forEach(input => input.oninput = event => { const index = Number(event.target.dataset.courseTitle); courses[index].title = event.target.value; event.target.closest('.stacked-course')?.querySelector('.course-accordion-name')?.replaceChildren(event.target.value || '새 과목'); selectCourse(index); });
+  editor.querySelectorAll('[data-course-due]').forEach(input => { input.oninput = event => { const index = Number(event.target.dataset.courseDue); courses[index].dueDate = event.target.value; const summaryDate = event.target.closest('.stacked-course')?.querySelector('.course-accordion-summary small'); if (summaryDate) summaryDate.textContent = `마감 ${event.target.value ? formatDate(event.target.value) : '미정'}`; selectCourse(index); }; bindDatePicker(input); });
   editor.querySelectorAll('[data-course-line]').forEach(input => input.oninput = event => { const index = Number(event.target.dataset.courseLine); const lineIndex = Number(event.target.dataset.line); const card = event.target.closest('.stacked-course'); if (!courses[index].refinedLines?.[lineIndex]) courses[index].originalLines[lineIndex] = event.target.value; courses[index].detail = [...card.querySelectorAll('[data-course-line]')].map(node => node.value).join('\n'); selectCourse(index); });
-  editor.querySelectorAll('[data-ai-suggest]').forEach(button => button.onclick = async event => {
-    event.preventDefault(); event.stopPropagation();
-    const [courseIndex, lineIndex] = button.dataset.aiSuggest.split(':').map(Number);
-    const course = courses[courseIndex];
-    const input = editor.querySelector(`[data-course-line="${courseIndex}"][data-line="${lineIndex}"]`);
-    const original = (course.refinedLines?.[lineIndex] ? course.originalLines?.[lineIndex] : input?.value).trim();
-    if (!original) return setMessage('AI로 다듬을 할 일 문구를 먼저 입력해 주세요.', true);
-    const previousLabel = button.textContent;
-    button.disabled = true; button.textContent = '생성 중';
-    try {
-      const { configured } = await bridge.ai.keyStatus();
-      if (!configured) { await openAiSettings(); return; }
-      const result = await bridge.ai.suggest(original);
-      if (window.confirm(`다듬은 문구를 적용할까요?\n\n${result.text}`)) {
-        if (!course.refinedLines[lineIndex]) course.originalLines[lineIndex] = input.value.trim();
-        const values = String(course.detail || '').split(/\r?\n/);
-        values[lineIndex] = result.text;
-        course.detail = values.join('\n');
-        course.refinedLines[lineIndex] = true;
-        expandedComparisons.add(`${courseIndex}:${lineIndex}`);
-        setMessage('다듬은 문구를 적용했습니다. 원문 비교에서 언제든 확인하거나 복원할 수 있습니다.');
-        renderCourses();
-      }
-    } catch (error) { setMessage(error.message, true); }
-    finally { button.disabled = false; button.textContent = previousLabel; }
-  });
-  editor.querySelectorAll('[data-toggle-comparison]').forEach(button => button.onclick = event => { event.preventDefault(); event.stopPropagation(); const key = button.dataset.toggleComparison; if (expandedComparisons.has(key)) expandedComparisons.delete(key); else expandedComparisons.add(key); renderCourses(); });
-  editor.querySelectorAll('[data-close-comparison]').forEach(button => button.onclick = event => { event.stopPropagation(); expandedComparisons.delete(button.dataset.closeComparison); renderCourses(); });
-  editor.querySelectorAll('[data-restore-original]').forEach(button => button.onclick = event => { event.stopPropagation(); const [courseIndex, lineIndex] = button.dataset.restoreOriginal.split(':').map(Number); const course = courses[courseIndex]; const values = String(course.detail || '').split(/\r?\n/); values[lineIndex] = course.originalLines[lineIndex] || ''; course.detail = values.join('\n'); course.refinedLines[lineIndex] = false; expandedComparisons.delete(`${courseIndex}:${lineIndex}`); setMessage('원본 문구로 복원했습니다.'); renderCourses(); });
+  editor.querySelectorAll('[data-show-course-original]').forEach(button => button.onclick = event => { event.preventDefault(); event.stopPropagation(); const index = Number(button.dataset.showCourseOriginal); if (expandedOriginalCourses.has(index)) expandedOriginalCourses.delete(index); else expandedOriginalCourses.add(index); activeCourseIndex = index; renderCourses(); });
+  editor.querySelectorAll('[data-restore-course]').forEach(button => button.onclick = event => { event.stopPropagation(); const index = Number(button.dataset.restoreCourse); const course = courses[index]; course.detail = course.originalLines.join('\n'); course.refinedLines = course.originalLines.map(() => false); expandedOriginalCourses.delete(index); setMessage('선택한 과목을 불러온 원본으로 복원했습니다.'); renderCourses(); });
   editor.querySelectorAll('[data-remove-line]').forEach(button => button.onclick = event => { event.stopPropagation(); const [courseIndex, lineIndex] = button.dataset.removeLine.split(':').map(Number); const course = courses[courseIndex]; const values = String(course.detail || '').split(/\r?\n/); values.splice(lineIndex, 1); course.originalLines.splice(lineIndex, 1); course.refinedLines.splice(lineIndex, 1); course.detail = values.join('\n'); expandedComparisons.clear(); activeCourseIndex = courseIndex; renderCourses(); });
   editor.querySelectorAll('[data-add-line]').forEach(button => button.onclick = event => { event.stopPropagation(); const index = Number(button.dataset.addLine); const course = courses[index]; course.detail = `${course.detail}${course.detail ? '\n' : ''}새 항목`; course.originalLines.push('새 항목'); course.refinedLines.push(false); activeCourseIndex = index; renderCourses(); const card = editor.querySelector(`[data-course="${index}"]`); const inputs = card.querySelectorAll('[data-course-line]'); inputs[inputs.length - 1].focus(); inputs[inputs.length - 1].select(); });
   $('#deleteCourse').onclick = () => {
@@ -219,8 +236,27 @@ function renderCourses() {
     }
     renderCourses();
   };
+  const hasAiChanges = courses.some(course => course.originalLines.join('\n').trim() !== String(course.detail || '').trim());
+  $('#compareAllOriginals').hidden = !hasAiChanges;
+  const changedIndices = courses.map((course, index) => course.originalLines.join('\n').trim() !== String(course.detail || '').trim() ? index : -1).filter(index => index >= 0);
+  $('#compareAllOriginals').textContent = changedIndices.length && changedIndices.every(index => expandedOriginalCourses.has(index)) ? '전체 비교 닫기' : '전체 원본 비교';
 }
-function setCourses(items) { expandedComparisons.clear(); courses = items.map(item => { const detail = item.detail || ''; const itemLines = String(detail).split(/\r?\n/); const originals = Array.isArray(item.originalLines) ? item.originalLines : String(item.originalDetail ?? detail).split(/\r?\n/); return { title: item.title || '', detail, originalLines: itemLines.map((line, index) => originals[index] ?? line), refinedLines: itemLines.map((line, index) => Boolean(item.refinedLines?.[index]) && originals[index] !== line), dueDate: item.dueDate || '', startDate: item.startDate || '' }; }); activeCourseIndex = 0; renderCourses(); }
+function setCourses(items) { expandedComparisons.clear(); expandedOriginalCourses.clear(); courses = items.map(item => { const detail = item.detail || ''; const itemLines = String(detail).split(/\r?\n/); const originals = Array.isArray(item.originalLines) ? item.originalLines : String(item.originalDetail ?? detail).split(/\r?\n/); const changed = originals.join('\n').trim() !== detail.trim(); return { title: item.title || '', detail, originalLines: originals, refinedLines: itemLines.map(() => changed), dueDate: item.dueDate || '', startDate: item.startDate || '' }; }); activeCourseIndex = 0; renderCourses(); }
+async function organizeImportedCourses(items) {
+  const { configured } = await bridge.ai.keyStatus();
+  if (!configured) return { items, organized: false };
+  setStepMessage(3, 'AI가 전체 일정을 보기 좋게 구성하고 있습니다.');
+  const result = await bridge.ai.organizeSchedule(items);
+  const organizedByIndex = new Map((result.items || []).map(item => [Number(item.courseIndex), item.detail]));
+  return {
+    organized: true,
+    items: items.map((item, index) => {
+      const originalDetail = String(item.detail || '');
+      const detail = organizedByIndex.get(index) || originalDetail;
+      return { ...item, detail, originalDetail, originalLines: originalDetail.split(/\r?\n/), refinedLines: detail.split(/\r?\n/).map(() => detail.trim() !== originalDetail.trim()) };
+    })
+  };
+}
 function draft() { return { date: $('#planDate').value, source, items: courses.filter(course => course.title).map(course => ({ title: course.title, detail: course.detail, originalDetail: course.originalLines.join('\n'), refinedLines: course.refinedLines, dueDate: course.dueDate, startDate: course.startDate || $('#planDate').value })) }; }
 function setEditingMode(target = null) { editingTarget = target; const editing = Boolean(target); $('#addTask').hidden = editing; $('#deleteCourse').hidden = editing; $('#planDate').disabled = editing; $('#register').textContent = editing ? '수정 저장' : '일정 등록'; }
 const dateValue = value => value ? new Date(`${value}T00:00:00`) : null;
@@ -255,7 +291,7 @@ function renderGantt() {
   if (!items.length) { host.innerHTML = `<p class="muted">${overviewScope === 'all' ? '이 달에 표시할 일정이 없습니다.' : '선택한 범위에 남은 일정이 없습니다.'}</p>`; return; }
   const axis = Array.from({ length: days }, (_, index) => {
     const value = `${monthValue}-${String(index + 1).padStart(2, '0')}`;
-    return `<th class="day-col ${value === today ? 'today-col' : ''}">${index + 1}</th>`;
+    return `<th class="day-col ${value === today ? 'today-col' : ''}"><span>${index + 1}</span></th>`;
   }).join('');
   const rows = items.map(item => {
     const start = item.startDate || item.date;
@@ -282,7 +318,8 @@ function renderGantt() {
     }
     return `<tr>${cells}</tr>`;
   }).join('');
-  host.innerHTML = `<table class="gantt-table"><thead><tr><th class="gantt-subject-col">과목</th>${axis}</tr></thead><tbody>${rows}</tbody></table>`;
+  const tableWidth = 170 + (days * 42);
+  host.innerHTML = `<table class="gantt-table" style="width:${tableWidth}px;min-width:${tableWidth}px"><colgroup><col class="gantt-subject-column">${Array.from({ length: days }, () => '<col>').join('')}</colgroup><thead><tr><th class="gantt-subject-col">과목</th>${axis}</tr></thead><tbody>${rows}</tbody></table>`;
   host.querySelectorAll('.gantt-bar').forEach(button => {
     button.onclick = () => {
       selectedCourseKey = button.dataset.courseKey;
@@ -301,7 +338,7 @@ function renderGantt() {
   if ($('#overviewPage').classList.contains('active')) scrollGanttToToday();
 }
 function renderProgressFocus() { const items = allItems(); const tasks = items.flatMap(item => lines(item).map((text, index) => ({ item, text, done: Boolean(item.done?.[index]) }))); const remaining = tasks.filter(task => !task.done); const dueSoon = items.filter(item => { const diff = dayDiff(item.dueDate); return diff !== '' && diff >= 0 && diff <= 3 && lines(item).some((_, index) => !item.done?.[index]); }).length; $('#progressSummary').innerHTML = `<div><span>남은 할 일</span><strong>${remaining.length}</strong></div><div><span>마감 임박</span><strong>${dueSoon}</strong></div><div><span>완료</span><strong>${tasks.length - remaining.length}<small> / ${tasks.length}</small></strong></div>`; const focus = $('#focusList'); if (!remaining.length) { focus.innerHTML = '<div class="focus-empty">오늘은 남은 숙제가 없습니다.</div>'; return; } focus.innerHTML = remaining.sort((a, b) => (a.item.dueDate || '9999').localeCompare(b.item.dueDate || '9999')).slice(0, 6).map(task => { const diff = dayDiff(task.item.dueDate); const label = diff === '' ? '' : diff === 0 ? 'D-day' : `D-${diff}`; return `<div class="focus-item"><span class="focus-check"></span><div><strong>${escapeHtml(task.text)}</strong><small>${escapeHtml(task.item.title)}</small></div><span>${label}</span></div>`; }).join(''); }
-function showRegistered(planData) { savedPlans = planData?.plans || savedPlans; renderChecklist(); renderProgressFocus(); renderGantt(); }
+function showRegistered(planData) { savedPlans = planData?.plans || savedPlans; updateMonthPicker(); renderChecklist(); renderProgressFocus(); renderGantt(); }
 function setRegisterStep(step, { allowBack = false } = {}) {
   const nextStep = Math.max(1, Math.min(4, step));
   registerStep = allowBack ? nextStep : Math.max(registerStep, nextStep);
@@ -335,7 +372,7 @@ async function refreshStatus() {
 let progressScope = overviewScope;
 function isVisibleTask(item, done) { if (progressScope === 'all') return true; const due = item.dueDate || item.startDate || item.date; if (progressScope === 'today') return due <= today || item.startDate === today; const weekEnd = new Date(`${today}T00:00:00`); weekEnd.setDate(weekEnd.getDate() + 6); const end = weekEnd.toISOString().slice(0, 10); return due <= end || !done && due < today; }
 function renderChecklist() { const host = $('#checklistList'); const tasks = allItems().flatMap(item => lines(item).map((text, lineIndex) => ({ item, text, lineIndex, done: Boolean(item.done?.[lineIndex]) }))).filter(task => isVisibleTask(task.item, task.done)); host.innerHTML = ''; $('#taskCount').textContent = `${tasks.filter(task => !task.done).length}개 남음`; if (!tasks.length) { host.innerHTML = '<p class="muted">이 범위에 표시할 할 일이 없습니다.</p>'; return; } tasks.sort((a, b) => (a.done - b.done) || (a.item.dueDate || '9999').localeCompare(b.item.dueDate || '9999')).forEach(task => { const dday = dayDiff(task.item.dueDate); const dueLabel = dday === '' ? '마감일 없음' : dday < 0 ? '기한 지남' : dday === 0 ? 'D-day' : `D-${dday}`; const row = document.createElement('label'); row.className = `action-task ${task.done ? 'done' : ''}`; row.innerHTML = `<input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span><span class="task-body"><small>${escapeHtml(task.item.title)}</small><strong>${escapeHtml(task.text)}</strong></span><span class="task-deadline">${dueLabel}</span>`; host.append(row); row.querySelector('input').onchange = async event => { try { const result = await bridge.plan.toggleLine(task.item.date, task.item.itemIndex, task.lineIndex, event.target.checked); savedPlans = result.plans; renderChecklist(); renderGantt(); } catch (error) { setMessage(error.message, true); event.target.checked = !event.target.checked; } }; }); }
-function showRegistered(planData) { savedPlans = planData?.plans || savedPlans; renderChecklist(); renderGantt(); }
+function showRegistered(planData) { savedPlans = planData?.plans || savedPlans; updateMonthPicker(); renderChecklist(); renderGantt(); }
 function syncScopeTabs() { $('#scheduleScopeTabs').querySelectorAll('.scope-tab').forEach(tab => { const selected = tab.dataset.scope === overviewScope; tab.classList.toggle('active', selected); tab.setAttribute('aria-selected', String(selected)); }); }
 function syncHideCompleted() { const button = $('#hideCompleted'); button.classList.toggle('active', hideCompleted); button.setAttribute('aria-pressed', String(hideCompleted)); button.textContent = '완료 항목 숨기기'; }
 $('#scheduleScopeTabs').onclick = event => { const button = event.target.closest('.scope-tab'); if (!button) return; overviewScope = button.dataset.scope; progressScope = button.dataset.scope; localStorage.setItem(scopeStorageKey, overviewScope); syncScopeTabs(); renderGantt(); renderChecklist(); };
@@ -344,29 +381,47 @@ syncScopeTabs();
 syncHideCompleted();
 $('#planDate').value = today; setCourses([{ title: '', detail: '', dueDate: '' }]);
 bindDatePicker($('#planDate'));
-$('#datePickerYearSelect').onchange = event => { event.stopPropagation(); pickerYear = Number(event.target.value); renderDatePicker(); };
-$('#datePickerMonthSelect').onchange = event => { event.stopPropagation(); pickerMonth = Number(event.target.value); renderDatePicker(); };
+$('#datePickerPrevious').onclick = event => { event.stopPropagation(); if (datePickerStage === 'months') pickerYear -= 1; else { const date = new Date(pickerYear, pickerMonth - 1, 1); pickerYear = date.getFullYear(); pickerMonth = date.getMonth(); } renderDatePicker(); };
+$('#datePickerNext').onclick = event => { event.stopPropagation(); if (datePickerStage === 'months') pickerYear += 1; else { const date = new Date(pickerYear, pickerMonth + 1, 1); pickerYear = date.getFullYear(); pickerMonth = date.getMonth(); } renderDatePicker(); };
+$('#datePickerBackToMonths').onclick = event => { event.stopPropagation(); datePickerStage = 'months'; renderDatePicker(); };
 $('#datePickerToday').onclick = event => { event.stopPropagation(); if (!activeDateInput) return; activeDateInput.value = today; activeDateInput.dispatchEvent(new Event('input', { bubbles: true })); closeDatePicker(); };
-$('#datePickerClear').onclick = event => { event.stopPropagation(); if (!activeDateInput) return; activeDateInput.value = ''; activeDateInput.dispatchEvent(new Event('input', { bubbles: true })); closeDatePicker(); };
 $('#datePickerPopover').onclick = event => event.stopPropagation();
 document.addEventListener('click', closeDatePicker);
 $('#addTask').onclick = () => { if (courses.length >= maxCourses) { setMessage(`과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, true); return setStepMessage(4, `과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, 'error'); } courses.push({ title: '', detail: '', originalLines: [''], refinedLines: [false], dueDate: '', startDate: $('#planDate').value }); activeCourseIndex = courses.length - 1; renderCourses(); requestAnimationFrame(() => $('#courseEditor .stacked-course:last-child')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })); };
+$('#compareAllOriginals').onclick = () => {
+  const changedIndices = courses.map((course, index) => course.originalLines.join('\n').trim() !== String(course.detail || '').trim() ? index : -1).filter(index => index >= 0);
+  const shouldOpen = changedIndices.some(index => !expandedOriginalCourses.has(index));
+  expandedOriginalCourses.clear();
+  if (shouldOpen) changedIndices.forEach(index => expandedOriginalCourses.add(index));
+  renderCourses();
+};
 $('#launchEpoly').onclick = async () => { setStepMessage(1, 'e-POLY를 실행하고 있습니다.'); try { await bridge.epoly.launch(); setStepMessage(1, 'e-POLY를 실행했습니다.', 'success'); setRegisterStep(2); setMessage('e-POLY를 여는 중입니다.'); setTimeout(() => refreshStatus().catch(error => setStepMessage(1, error.message, 'error')), 1500); } catch (error) { setMessage(error.message, true); setStepMessage(1, error.message, 'error'); } };
 $('#openEpolyInstallGuide').onclick = () => bridge.epoly.openInstallGuide();
 $('#openCalendar').onclick = async () => { setStepMessage(2, '캘린더를 열고 있습니다.'); try { const result = await bridge.epoly.openCalendar(); if (!result.opened) { setMessage(result.message, true); return setStepMessage(2, result.message, 'error'); } setStepMessage(2, '캘린더를 열었습니다.', 'success'); setRegisterStep(3); setMessage('e-POLY 캘린더를 여는 중입니다.'); setTimeout(() => refreshStatus().catch(error => setStepMessage(2, error.message, 'error')), 1200); } catch (error) { setMessage(error.message, true); setStepMessage(2, error.message, 'error'); } };
-$('#getToday').onclick = async () => { const selectedDate = $('#planDate').value; const button = $('#getToday'); setEditingMode(); setRegisterStep(3, { allowBack: true }); setStepMessage(3, `${selectedDate} 일정을 확인하고 있습니다.`); button.disabled = true; try { const isToday = selectedDate === today; const result = isToday ? await bridge.epoly.todayHomework() : await bridge.epoly.dateHomework(selectedDate); source = isToday ? 'epoly-today' : 'epoly-date'; $('#sourceLabel').textContent = isToday ? 'e-POLY 오늘' : `e-POLY ${selectedDate}`; if (!result.tasks.length) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(3, { allowBack: true }); setMessage(''); return setStepMessage(3, `${selectedDate}에 등록된 숙제가 없습니다.`, 'empty'); } setCourses(result.tasks); setRegisterStep(4); setMessage(`${selectedDate} 숙제를 가져왔습니다.`); setStepMessage(4, `${result.tasks.length}개 과목을 가져왔습니다. 내용을 확인해 주세요.`, 'success'); } catch (error) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(3, { allowBack: true }); setMessage(error.message, true); setStepMessage(3, error.message, 'error'); } finally { button.disabled = false; } };
+$('#getToday').onclick = async () => { const selectedDate = $('#planDate').value; const button = $('#getToday'); setEditingMode(); setRegisterStep(3, { allowBack: true }); setStepMessage(3, `${selectedDate} 일정을 확인하고 있습니다.`); button.disabled = true; try { const isToday = selectedDate === today; const result = isToday ? await bridge.epoly.todayHomework() : await bridge.epoly.dateHomework(selectedDate); source = isToday ? 'epoly-today' : 'epoly-date'; $('#sourceLabel').textContent = isToday ? 'e-POLY 오늘' : `e-POLY ${selectedDate}`; if (!result.tasks.length) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(3, { allowBack: true }); setMessage(''); return setStepMessage(3, `${selectedDate}에 등록된 숙제가 없습니다.`, 'empty'); } let prepared; try { prepared = await organizeImportedCourses(result.tasks); } catch (aiError) { prepared = { items: result.tasks, organized: false }; setMessage(`AI 일정 정리를 적용하지 못해 원본을 불러왔습니다. ${aiError.message}`, true); } setCourses(prepared.items); setRegisterStep(4); if (prepared.organized) { setMessage('AI가 전체 일정을 정리했습니다. 필요하면 원본 보기를 눌러 비교할 수 있습니다.'); setStepMessage(4, `${result.tasks.length}개 과목을 AI로 구성했습니다. 내용을 확인해 주세요.`, 'success'); } else { if (!$('#message').textContent) setMessage(`${selectedDate} 숙제를 가져왔습니다.`); setStepMessage(4, `${result.tasks.length}개 과목을 가져왔습니다. 내용을 확인해 주세요.`, 'success'); } } catch (error) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(3, { allowBack: true }); setMessage(error.message, true); setStepMessage(3, error.message, 'error'); } finally { button.disabled = false; } };
 function updateHistoryControls() {
   if ($('#historyBack')) $('#historyBack').disabled = pageHistoryIndex <= 0;
   if ($('#historyForward')) $('#historyForward').disabled = pageHistoryIndex >= pageHistory.length - 1;
 }
 function scrollGanttToToday() {
   const host = $('#ganttChart');
-  if (!host?.querySelector('.today-col')) return;
-  const moveToEnd = () => { host.scrollLeft = Math.max(0, host.scrollWidth - host.clientWidth); };
-  moveToEnd();
+  if (!host) return;
+  const positionToday = () => {
+    const todayCell = host.querySelector('.today-col');
+    if (!todayCell) {
+      host.scrollLeft = 0;
+      return;
+    }
+    const subjectWidth = 170;
+    const dateViewportWidth = Math.max(0, host.clientWidth - subjectWidth);
+    const targetLeft = todayCell.offsetLeft - subjectWidth - Math.max(0, (dateViewportWidth - todayCell.offsetWidth) / 2);
+    const maxLeft = Math.max(0, host.scrollWidth - host.clientWidth);
+    host.scrollLeft = Math.min(maxLeft, Math.max(0, targetLeft));
+  };
+  positionToday();
   requestAnimationFrame(() => {
-    moveToEnd();
-    requestAnimationFrame(moveToEnd);
+    positionToday();
+    requestAnimationFrame(positionToday);
   });
 }
 function showPage(page, { record = true } = {}) {
@@ -406,8 +461,9 @@ const notesStorageKey = 'myholypoly.notes';
 let notes = (() => { try { return JSON.parse(localStorage.getItem(notesStorageKey) || '[]'); } catch { return []; } })();
 function saveNotes() { localStorage.setItem(notesStorageKey, JSON.stringify(notes)); }
 function noteDate(value) { return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value)); }
-function renderNotes() { const host = $('#notesList'); if (!host) return; if (!notes.length) { host.innerHTML = '<div class="notes-empty"><span>📝</span><strong>아직 메모가 없습니다</strong><button type="button" data-create-note>첫 메모 만들기</button></div>'; return; } host.innerHTML = `<button class="note-add-tile" type="button" data-create-note aria-label="메모 추가"><b>＋</b><span>메모 추가</span></button>${notes.map(note => `<article class="note-card" data-note-id="${note.id}"><div class="note-card-head"><input data-note-title value="${escapeHtml(note.title)}" placeholder="메모 제목" aria-label="메모 제목"><button type="button" data-delete-note aria-label="메모 삭제">삭제</button></div><textarea data-note-body placeholder="메모 내용을 입력하세요" aria-label="메모 내용">${escapeHtml(note.body)}</textarea><footer>${noteDate(note.updatedAt)}</footer></article>`).join('')}`; }
+function renderNotes() { const host = $('#notesList'); if (!host) return; if (!notes.length) { host.innerHTML = '<div class="notes-empty"><span aria-hidden="true"></span><strong>아직 작성한 메모가 없습니다.</strong><small>오른쪽 위 + 버튼을 눌러 메모를 추가하세요.</small></div>'; return; } host.innerHTML = notes.map(note => `<article class="note-card" data-note-id="${note.id}"><div class="note-card-head"><input data-note-title value="${escapeHtml(note.title)}" placeholder="메모 제목" aria-label="메모 제목"><button type="button" data-delete-note aria-label="메모 삭제">삭제</button></div><textarea data-note-body placeholder="메모 내용을 입력하세요" aria-label="메모 내용">${escapeHtml(note.body)}</textarea><footer>${noteDate(note.updatedAt)}</footer></article>`).join(''); }
 function createNote() { const note = { id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, title: '', body: '', updatedAt: new Date().toISOString() }; notes.unshift(note); saveNotes(); renderNotes(); requestAnimationFrame(() => $('#notesList [data-note-title]')?.focus()); }
+$('#addNote').onclick = createNote;
 $('#notesList').onclick = event => { if (event.target.closest('[data-create-note]')) return createNote(); const card = event.target.closest('[data-note-id]'); if (!card || !event.target.closest('[data-delete-note]')) return; notes = notes.filter(note => note.id !== card.dataset.noteId); saveNotes(); renderNotes(); };
 $('#notesList').oninput = event => { const card = event.target.closest('[data-note-id]'); if (!card) return; const note = notes.find(item => item.id === card.dataset.noteId); if (!note) return; if (event.target.matches('[data-note-title]')) note.title = event.target.value; if (event.target.matches('[data-note-body]')) note.body = event.target.value; note.updatedAt = new Date().toISOString(); saveNotes(); card.querySelector('footer').textContent = noteDate(note.updatedAt); };
 renderNotes();
@@ -427,14 +483,13 @@ let monthPickerYear = Number(today.slice(0, 4));
 function updateMonthPicker() {
   const value = $('#ganttMonth').value || today.slice(0, 7);
   const [year, month] = value.split('-').map(Number);
-  $('#monthPickerText').textContent = `${year}. ${String(month).padStart(2, '0')}`;
-  const yearSelect = $('#monthPickerYearSelect');
-  yearSelect.innerHTML = Array.from({ length: 11 }, (_, index) => monthPickerYear - 5 + index).map(optionYear => `<option value="${optionYear}">${optionYear}년</option>`).join('');
-  yearSelect.value = String(monthPickerYear);
+  $('#monthPickerText').textContent = `${year}년 ${month}월`;
+  $('#monthStripYear').textContent = monthPickerYear;
+  const markedMonths = homeworkMonths(monthPickerYear);
   $('#monthGrid').innerHTML = Array.from({ length: 12 }, (_, index) => {
     const number = index + 1;
     const selected = year === monthPickerYear && month === number;
-    return `<button type="button" data-month="${number}" class="${selected ? 'selected' : ''}">${number}월</button>`;
+    return `<button type="button" data-month="${number}" class="${selected ? 'selected' : ''}">${number}월${markedMonths.has(number) ? '<i></i>' : ''}</button>`;
   }).join('');
   $('#monthGrid').querySelectorAll('button').forEach(button => button.onclick = () => {
     $('#ganttMonth').value = `${monthPickerYear}-${String(button.dataset.month).padStart(2, '0')}`;
@@ -453,39 +508,26 @@ function moveGanttMonth(offset) {
   renderGantt(); renderChecklist();
 }
 function positionMonthPopover() {
-  const button = $('#monthPickerButton');
-  const popover = $('#monthPopover');
+  const button = $('#monthPickerButton'); const popover = $('#monthPopover');
   if (!button || !popover || popover.hidden) return;
-  const buttonRect = button.closest('.inline-month-picker')?.getBoundingClientRect() || button.getBoundingClientRect();
-  const gap = 9;
-  const viewportGap = 14;
-  const width = popover.offsetWidth;
-  const height = popover.offsetHeight;
-  const left = Math.min(Math.max(viewportGap, buttonRect.left), window.innerWidth - width - viewportGap);
-  const spaceBelow = window.innerHeight - buttonRect.bottom - gap - viewportGap;
-  const top = spaceBelow >= height
-    ? buttonRect.bottom + gap
-    : Math.max(viewportGap, buttonRect.top - height - gap);
-  popover.style.left = `${Math.round(left)}px`;
-  popover.style.top = `${Math.round(top)}px`;
+  const rect = button.getBoundingClientRect(); const gap = 10; const edge = 12;
+  const left = Math.max(edge, Math.min(rect.left, window.innerWidth - popover.offsetWidth - edge));
+  const top = Math.max(edge, Math.min(rect.bottom + gap, window.innerHeight - popover.offsetHeight - edge));
+  popover.style.left = `${Math.round(left)}px`; popover.style.top = `${Math.round(top)}px`;
 }
-$('#monthPickerButton').onclick = event => {
-  event.stopPropagation();
-  const popover = $('#monthPopover');
-  popover.hidden = !popover.hidden;
-  $('#monthPickerButton').setAttribute('aria-expanded', String(!popover.hidden));
-  monthPickerYear = Number(($('#ganttMonth').value || today).slice(0, 4));
-  updateMonthPicker();
-  positionMonthPopover();
-};
-$('#monthPickerYearSelect').onchange = event => { event.stopPropagation(); monthPickerYear = Number(event.target.value); updateMonthPicker(); };
+$('#monthQuickPrevious').onclick = event => { event.stopPropagation(); moveGanttMonth(-1); };
+$('#monthQuickNext').onclick = event => { event.stopPropagation(); moveGanttMonth(1); };
+$('#monthPickerButton').onclick = event => { event.stopPropagation(); const popover = $('#monthPopover'); const opening = popover.hidden; popover.hidden = !opening; $('#monthPickerButton').setAttribute('aria-expanded', String(opening)); if (opening) { monthPickerYear = Number(($('#ganttMonth').value || today).slice(0, 4)); updateMonthPicker(); positionMonthPopover(); } };
 $('#monthPopover').onclick = event => event.stopPropagation();
+$('#monthToday').onclick = () => { $('#ganttMonth').value = today.slice(0, 7); monthPickerYear = Number(today.slice(0, 4)); $('#monthPopover').hidden = true; $('#monthPickerButton').setAttribute('aria-expanded', 'false'); updateMonthPicker(); renderGantt(); renderChecklist(); };
+$('#monthYearPrevious').onclick = () => { monthPickerYear -= 1; updateMonthPicker(); };
+$('#monthYearNext').onclick = () => { monthPickerYear += 1; updateMonthPicker(); };
 document.addEventListener('click', () => { $('#monthPopover').hidden = true; $('#monthPickerButton').setAttribute('aria-expanded', 'false'); });
 window.addEventListener('resize', positionMonthPopover);
 updateMonthPicker();
 progressScope = overviewScope;
 function isVisibleTask(item, done) { const monthValue = $('#ganttMonth').value || today.slice(0, 7); const [year, month] = monthValue.split('-').map(Number); const first = `${monthValue}-01`; const last = `${monthValue}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`; const start = item.startDate || item.date; const due = item.dueDate || start; if (start > last || due < first || (hideCompleted && done)) return false; const diff = dayDiff(due); if (progressScope === 'all') return true; if (progressScope === 'urgent') return !done && diff !== '' && diff <= 3; if (progressScope === 'today') return !done && (due === today || item.startDate === today); const weekEnd = new Date(`${today}T00:00:00`); weekEnd.setDate(weekEnd.getDate() + 6); return !done && due <= weekEnd.toISOString().slice(0, 10); }
-function renderSidebarSummary() { const host = $('#sidebarSummary'); if (!host) return; const monthValue = $('#ganttMonth').value || today.slice(0, 7); const items = allItems().filter(item => { const start = item.startDate || item.date; const due = item.dueDate || start; return start?.startsWith(monthValue) || due?.startsWith(monthValue); }); const tasks = items.flatMap(item => lines(item).map((_, index) => ({ done: Boolean(item.done?.[index]), dueDate: item.dueDate }))); const done = tasks.filter(task => task.done).length; const remaining = tasks.length - done; const urgent = tasks.filter(task => { const diff = dayDiff(task.dueDate); return !task.done && diff !== '' && diff >= 0 && diff <= 3; }).length; const rate = tasks.length ? Math.round(done / tasks.length * 100) : 0; host.innerHTML = `<div class="sidebar-summary-head"><span>이번 달 요약</span><b>${monthValue.replace('-', '. ')}</b></div><div class="sidebar-summary-stats"><div><span>남은 할 일</span><strong>${remaining}</strong></div><div><span>마감 임박</span><strong>${urgent}</strong></div></div><div class="sidebar-summary-progress"><span><b>완료율</b><em>${rate}%</em></span><i><b style="width:${rate}%"></b></i></div>`; }
+function renderSidebarSummary() { const monthValue = $('#ganttMonth').value || today.slice(0, 7); const items = allItems().filter(item => { const start = item.startDate || item.date; const due = item.dueDate || start; return start?.startsWith(monthValue) || due?.startsWith(monthValue); }); const tasks = items.flatMap(item => lines(item).map((_, index) => ({ done: Boolean(item.done?.[index]), dueDate: item.dueDate }))); const done = tasks.filter(task => task.done).length; const remaining = tasks.length - done; const rate = tasks.length ? Math.round(done / tasks.length * 100) : 0; const badge = $('#progressNavBadge'); if (badge) { badge.textContent = String(remaining); badge.hidden = remaining === 0; } if ($('#overviewCompletionRate')) $('#overviewCompletionRate').textContent = `${rate}%`; if ($('#overviewCompletionBar')) $('#overviewCompletionBar').style.width = `${rate}%`; }
 function renderChecklist() { const host = $('#checklistList'); const tasks = allItems().flatMap(item => lines(item).map((text, lineIndex) => ({ item, text, lineIndex, done: Boolean(item.done?.[lineIndex]) }))).filter(task => isVisibleTask(task.item, task.done)); host.innerHTML = ''; $('#taskCount').textContent = progressScope === 'urgent' ? `3일 이내 · ${tasks.length}개` : `${tasks.filter(task => !task.done).length}개 남음`; if (!tasks.length) { host.innerHTML = progressScope === 'urgent' ? '<p class="muted">3일 이내 마감인 미완료 할 일이 없습니다.</p>' : '<p class="muted">이 범위에 표시할 할 일이 없습니다.</p>'; return; } tasks.sort((a, b) => (a.done - b.done) || (a.item.dueDate || '9999').localeCompare(b.item.dueDate || '9999')).forEach(task => { const diff = dayDiff(task.item.dueDate); const dueLabel = diff === '' ? '마감일 없음' : diff < 0 ? '기한 지남' : diff === 0 ? 'D-day' : `D-${diff}`; const urgency = !task.done && diff !== '' && diff <= 1 ? 'critical' : !task.done && diff !== '' && diff <= 3 ? 'soon' : ''; const row = document.createElement('label'); row.className = `action-task ${task.done ? 'done' : ''} ${urgency}`; row.innerHTML = `<input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span><span class="task-body"><small>${escapeHtml(task.item.title)}</small><strong>${escapeHtml(task.text)}</strong></span><span class="task-deadline">${dueLabel}</span>`; host.append(row); row.querySelector('input').onchange = async event => { try { const result = await bridge.plan.toggleLine(task.item.date, task.item.itemIndex, task.lineIndex, event.target.checked); savedPlans = result.plans; renderChecklist(); renderGantt(); } catch (error) { setMessage(error.message, true); event.target.checked = !event.target.checked; } }; }); }
 function courseTargets(course) { return [...new Map(course.tasks.map(task => [`${task.item.date}:${task.item.itemIndex}`, { date: task.item.date, itemIndex: task.item.itemIndex }])).values()]; }
 function editSchedule(course) {
@@ -539,6 +581,16 @@ async function deleteSchedule(course) {
 }
 function closeScheduleMenus() { document.querySelectorAll('.schedule-menu.open').forEach(menu => menu.classList.remove('open')); document.querySelectorAll('.schedule-more[aria-expanded="true"]').forEach(button => button.setAttribute('aria-expanded', 'false')); }
 document.addEventListener('click', closeScheduleMenus);
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape') return;
+  const openMenu = document.querySelector('.schedule-menu.open');
+  if (!openMenu) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const trigger = openMenu.closest('.schedule-actions')?.querySelector('.schedule-more');
+  closeScheduleMenus();
+  trigger?.blur();
+});
 function renderChecklist() {
   renderSidebarSummary();
   const host = $('#checklistList');
@@ -552,7 +604,7 @@ function renderChecklist() {
   }));
   const courses = [...groups.values()].sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999'));
   host.innerHTML = '';
-  $('#taskCount').textContent = progressScope === 'urgent' ? `3일 이내 · ${courses.reduce((count, course) => count + course.tasks.length, 0)}개` : `${courses.reduce((count, course) => count + course.tasks.filter(task => !task.done).length, 0)}개 남음`;
+  $('#taskCount').textContent = `${courses.reduce((count, course) => count + course.tasks.filter(task => !task.done).length, 0)}개`;
   if (!courses.length) { host.innerHTML = progressScope === 'urgent' ? '<p class="muted">3일 이내 마감인 미완료 할 일이 없습니다.</p>' : '<p class="muted">이 범위에 표시할 할 일이 없습니다.</p>'; return; }
   courses.forEach(course => {
     const diff = dayDiff(course.dueDate);
@@ -567,7 +619,7 @@ function renderChecklist() {
     card.style.setProperty('--course-bg', palette.bg); card.style.setProperty('--course-border', palette.border); card.style.setProperty('--course-soft', palette.soft); card.style.setProperty('--course-text', palette.text);
     card.innerHTML = editing
       ? `<div class="inline-course-editor"><div class="inline-editor-title"><strong>${escapeHtml(course.title)}</strong><small>할 일 내용 편집</small></div><div class="inline-course-tasks">${inlineCourseDraft.tasks.map((task, index) => `<div><span>${String(index + 1).padStart(2, '0')}</span><input data-inline-task="${index}" value="${escapeHtml(task.text)}"><button type="button" data-inline-remove="${index}" aria-label="내용 삭제">삭제</button></div>`).join('')}</div><button type="button" class="inline-add-task">＋ 내용 추가</button><div class="inline-editor-actions"><button type="button" class="inline-cancel">취소</button><button type="button" class="inline-save">수정 저장</button></div></div>`
-      : `<header><div><span class="course-dot"></span><strong>${escapeHtml(course.title)}</strong><small>마감 ${formatDate(course.dueDate)}</small></div><div class="action-course-meta"><span class="task-deadline">${dueLabel}</span><div class="schedule-actions"><button type="button" class="schedule-more" aria-label="일정 메뉴" aria-expanded="false">•••</button><div class="schedule-menu"><button type="button" data-edit-schedule><span>✎</span>일정 수정</button><button type="button" data-delete-schedule><span>×</span>일정 삭제</button></div></div></div></header><div class="action-course-tasks">${course.tasks.map(task => `<label class="action-course-line ${task.done ? 'done' : ''}"><input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span><span>${escapeHtml(task.text)}</span></label>`).join('')}</div><footer>${hideCompleted ? `${course.tasks.length}개 남음` : `${course.tasks.filter(task => task.done).length}/${course.tasks.length} 완료`}</footer>`;
+      : `<header><div><span class="course-dot"></span><strong>${escapeHtml(course.title)}</strong><small>마감 ${formatDate(course.dueDate)}</small></div><div class="action-course-meta"><span class="task-deadline">${dueLabel}</span><div class="schedule-actions"><button type="button" class="schedule-more" aria-label="일정 메뉴" aria-expanded="false">•••</button><div class="schedule-menu"><button type="button" data-edit-schedule><img src="./icons/icon-edit.svg" alt="">일정 수정</button><span class="schedule-menu-separator" aria-hidden="true"></span><button type="button" data-delete-schedule><img src="./icons/icon-delete.svg" alt="">일정 삭제</button></div></div></div></header><div class="action-course-tasks">${course.tasks.map(task => `<label class="action-course-line ${task.done ? 'done' : ''}"><input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span><span>${escapeHtml(task.text)}</span></label>`).join('')}</div><footer>${hideCompleted ? `${course.tasks.length}개 남음` : `${course.tasks.filter(task => task.done).length}/${course.tasks.length} 완료`}</footer>`;
     host.append(card);
     if (editing) {
       card.querySelectorAll('[data-inline-task]').forEach(input => input.oninput = event => { inlineCourseDraft.tasks[Number(event.target.dataset.inlineTask)].text = event.target.value; });

@@ -26,7 +26,7 @@ jobs:
           version: 11.19.0
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --shamefully-hoist
+        run: pnpm install --frozen-lockfile --node-linker=hoisted
 
       - name: Package Windows application
         shell: pwsh

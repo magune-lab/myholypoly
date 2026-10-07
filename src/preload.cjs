@@ -1,6 +1,10 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('myholypoly', {
+  appInfo: {
+    read: () => ipcRenderer.invoke('app:info'),
+    openRepository: () => ipcRenderer.invoke('app:open-repository')
+  },
   windowControls: {
     minimize: () => ipcRenderer.invoke('window:minimize'),
     toggleMaximize: () => ipcRenderer.invoke('window:toggle-maximize')
@@ -18,7 +22,11 @@ contextBridge.exposeInMainWorld('myholypoly', {
     keyStatus: () => ipcRenderer.invoke('ai:key-status'),
     saveKey: key => ipcRenderer.invoke('ai:save-key', key),
     deleteKey: () => ipcRenderer.invoke('ai:delete-key'),
+    readRules: () => ipcRenderer.invoke('ai:read-rules'),
+    saveRules: rules => ipcRenderer.invoke('ai:save-rules', rules),
+    resetRules: () => ipcRenderer.invoke('ai:reset-rules'),
     suggest: text => ipcRenderer.invoke('ai:suggest', text),
+    organizeSchedule: items => ipcRenderer.invoke('ai:organize-schedule', items),
     openApiKeys: () => ipcRenderer.invoke('ai:open-api-keys'),
     openGuide: () => ipcRenderer.invoke('ai:open-guide')
   },
