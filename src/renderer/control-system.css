@@ -1167,9 +1167,12 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
 .scope-tab { min-height: 40px; padding: 0 16px; border: 1px solid #E2D6B6; border-radius: 20px; background: #fff; color: #766C58; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: -.15px; box-shadow: 0 2px 7px rgba(110,88,44,.035); }
 .scope-tab:hover { border-color: #D7C79F; background: #FFFDF7; color: #463C29; }
 .scope-tab.active { border-color: #FF6F59; background: #FF6F59; color: #fff; box-shadow: none; }
-.hide-completed { min-height: 32px; padding: 0 10px; border: 1px solid #E2D6B6; border-radius: 16px; background: #fff; color: #766C58; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 10px; font-weight: 700; white-space: nowrap; cursor: pointer; }
-.hide-completed:hover { border-color: #D7C79F; background: #FFFDF7; color: #463C29; }
-.hide-completed.active { border-color: #35A77B; background: #E7F6F0; color: #247D5D; }
+.hide-completed { display: inline-flex; min-height: 32px; margin-left: 7px; padding: 0 2px 0 15px; border: 0; border-left: 1px solid #DDD1B3; border-radius: 0; background: transparent; color: #8C8068; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 10px; font-weight: 700; white-space: nowrap; align-items: center; gap: 7px; cursor: pointer; }
+.hide-completed::before { content: ''; display: inline-grid; width: 16px; height: 16px; border: 1.5px solid #CFC2A1; border-radius: 5px; background: #fff; color: #fff; font-size: 10px; line-height: 1; place-items: center; }
+.hide-completed:hover { color: #463C29; }
+.hide-completed:hover::before { border-color: #AFA17E; }
+.hide-completed.active { color: #247D5D; }
+.hide-completed.active::before { content: '✓'; border-color: #35A77B; background: #35A77B; }
 
 .view-count-row { min-height: 24px; margin: 0 0 13px; padding: 0 3px; }
 .task-count { color: #766C58; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: -.1px; }
