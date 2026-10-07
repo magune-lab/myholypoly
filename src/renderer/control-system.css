@@ -1167,7 +1167,7 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
 .scope-tab { min-height: 40px; padding: 0 16px; border: 1px solid #E2D6B6; border-radius: 20px; background: #fff; color: #766C58; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: -.15px; box-shadow: 0 2px 7px rgba(110,88,44,.035); }
 .scope-tab:hover { border-color: #D7C79F; background: #FFFDF7; color: #463C29; }
 .scope-tab.active { border-color: #FF6F59; background: #FF6F59; color: #fff; box-shadow: none; }
-.hide-completed { min-height: 40px; padding: 0 15px; border: 1px solid #E2D6B6; border-radius: 20px; background: #fff; color: #766C58; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; }
+.hide-completed { min-height: 32px; padding: 0 10px; border: 1px solid #E2D6B6; border-radius: 16px; background: #fff; color: #766C58; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 10px; font-weight: 700; white-space: nowrap; cursor: pointer; }
 .hide-completed:hover { border-color: #D7C79F; background: #FFFDF7; color: #463C29; }
 .hide-completed.active { border-color: #35A77B; background: #E7F6F0; color: #247D5D; }
 
