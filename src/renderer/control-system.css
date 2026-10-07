@@ -1126,7 +1126,8 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
   justify-content: space-between;
 }
 .global-filterbar .gantt-month-controls { order: 1; }
-.global-filterbar .scope-tabs { order: 2; }
+.global-filterbar .schedule-filter-actions { order: 2; display: flex; align-items: center; gap: 8px; }
+.global-filterbar .schedule-filter-actions .scope-tabs { order: 0; }
 .inline-month-picker { height: 40px; padding: 0 13px; border: 1px solid #E2D6B6; border-radius: 12px; background: #fff; box-shadow: 0 2px 7px rgba(110,88,44,.035); }
 .inline-month-current,
 .global-filterbar .inline-month-current,
@@ -1166,6 +1167,9 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
 .scope-tab { min-height: 40px; padding: 0 16px; border: 1px solid #E2D6B6; border-radius: 20px; background: #fff; color: #766C58; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: -.15px; box-shadow: 0 2px 7px rgba(110,88,44,.035); }
 .scope-tab:hover { border-color: #D7C79F; background: #FFFDF7; color: #463C29; }
 .scope-tab.active { border-color: #FF6F59; background: #FF6F59; color: #fff; box-shadow: none; }
+.hide-completed { min-height: 40px; padding: 0 15px; border: 1px solid #E2D6B6; border-radius: 20px; background: #fff; color: #766C58; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; }
+.hide-completed:hover { border-color: #D7C79F; background: #FFFDF7; color: #463C29; }
+.hide-completed.active { border-color: #35A77B; background: #E7F6F0; color: #247D5D; }
 
 .view-count-row { min-height: 24px; margin: 0 0 13px; padding: 0 3px; }
 .task-count { color: #766C58; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: -.1px; }
@@ -1441,6 +1445,7 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
   .shell { display: block; width: 100%; height: calc(100vh - 46px); margin-top: 20px; padding-left: 0; border-radius: 0; }
   .topbar { position: static; display: none; }
   .app-page, .global-filterbar { grid-column: 1 / -1; }
+  .global-filterbar .schedule-filter-actions { align-items: stretch; flex-direction: column; }
   .register-dashboard { grid-template-columns: 1fr; }
   .register-steps { display: none; }
   #registerPage .focus-register-body { grid-template-columns: 1fr; }
