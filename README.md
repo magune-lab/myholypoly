@@ -60,5 +60,5 @@ pnpm run package:msix
 ```
 
 - 지원 운영체제: Windows
-- 현재 버전: `0.1.7`
+- 현재 버전: `0.1.8`
 - 저장소: [github.com/magune-lab/myholypoly](https://github.com/magune-lab/myholypoly)

@@ -58,20 +58,24 @@ button { color: var(--st-ink); }
 
 /* Desktop frame */
 .app-titlebar {
+  position: fixed !important;
   height: 34px !important;
-  padding: 0 114px 0 12px !important;
-  border-bottom: 3px solid var(--st-ink) !important;
+  padding: 0 114px 2px 12px !important;
+  border-bottom: 0 !important;
   background: #fff !important;
   color: var(--st-ink) !important;
   font-size: 12px !important;
 }
+.app-titlebar::after { position: absolute; z-index: 1; right: 0; bottom: 0; left: 0; height: 2px; background: var(--st-ink); content: ''; }
 .titlebar-mark,
 .titlebar-mark img { width: 23px !important; height: 23px !important; border-radius: 6px !important; }
-.window-controls { height: 31px !important; }
-.window-controls { border-bottom: 3px solid var(--st-ink) !important; }
-.window-control { width: 38px !important; height: 31px !important; color: var(--st-ink) !important; background: #fff !important; box-shadow: none !important; }
-.window-control:hover { background: var(--st-yellow) !important; }
-.window-control.close-app:hover { background: var(--st-red) !important; color: #fff !important; }
+.window-controls { z-index: 2 !important; top: 0 !important; right: 0 !important; display: flex !important; width: auto !important; height: 32px !important; padding: 0 8px 0 6px !important; align-items: center !important; gap: 4px !important; }
+.window-controls { border-bottom: 0 !important; }
+.window-controls::after { display: none; }
+.window-control { display: flex !important; position: relative; width: 32px !important; min-width: 0 !important; height: 26px !important; min-height: 0 !important; padding: 0 !important; border: 2px solid transparent !important; border-radius: 9px !important; color: var(--st-ink) !important; background: transparent !important; box-shadow: none !important; align-items: center !important; justify-content: center !important; }
+.window-control svg { position: static; width: 16px !important; height: 16px !important; margin: 0; stroke-width: 2 !important; transform: none; }
+.window-control:hover { border-color: var(--st-ink) !important; background: var(--st-yellow) !important; box-shadow: 2px 2px 0 var(--st-ink) !important; }
+.window-control.close-app:hover { background: #FF8A8A !important; color: var(--st-ink) !important; }
 
 .shell,
 body.is-maximized .shell {
@@ -358,6 +362,21 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
   box-shadow: var(--st-shadow) !important;
 }
 .action-course::before { display: block; height: 10px; border-bottom: 3px solid var(--st-ink); border-radius: 16px 16px 0 0; background: var(--course-bg); content: ''; }
+.spot-wrap { position: relative; display: flex; min-width: 0; border-radius: 24px; }
+.spot-wrap > .action-course { width: 100%; }
+.spot-wrap.spotlight { z-index: 3; animation: spot-pop 2s cubic-bezier(.3,1.5,.5,1) both; }
+.spot-wrap.spotlight::before,
+.spot-wrap.spotlight::after { position: absolute; inset: -3px; padding: 2px; border-radius: 27px; background: conic-gradient(from var(--spot-a), #FF6B6B, #FFB88A, #FFD84D, #5ED6A0, #58D6FF, #7DB2FF, #B79CFF, #FF9EC0, #FF6B6B); pointer-events: none; content: ''; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: spot-spin 2s cubic-bezier(.15,.7,.3,1) both, spot-fade 2s ease both; }
+.spot-wrap.spotlight::before { inset: -4px; padding: 3px; border-radius: 28px; opacity: .72; filter: blur(6px); }
+@property --spot-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes spot-spin { from { --spot-a: 0deg; } to { --spot-a: 900deg; } }
+@keyframes spot-fade { 0% { opacity: 0; } 10% { opacity: 1; } 65% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes spot-pop { 0% { transform: scale(1); } 15% { transform: scale(1.05); } 30% { transform: scale(.99); } 45% { transform: scale(1.015); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .spot-wrap.spotlight { animation: none; }
+  .spot-wrap.spotlight::before { display: none; }
+  .spot-wrap.spotlight::after { animation: spot-fade 1.2s ease both; --spot-a: 0deg; }
+}
 .action-course:hover,
 .action-course:focus-within,
 .action-course.is-target { border-color: var(--st-ink) !important; background: #fff !important; box-shadow: 6px 6px 0 var(--st-ink) !important; transform: translate(-1px, -1px) !important; }
@@ -447,6 +466,16 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
 #registerPage .connection { display: inline-flex !important; min-height: 28px !important; padding: 0 10px !important; border: 2px solid var(--st-ink) !important; border-radius: var(--st-radius-pill) !important; background: var(--st-green) !important; color: var(--st-ink) !important; font-size: 12px !important; align-items: center !important; }
 #registerPage .connection.offline { background: #fff !important; }
 #registerPage .plan-date { margin: 16px 0 6px !important; color: var(--st-sub) !important; font-size: 13px !important; }
+#registerPage .plan-date-control { display: grid; width: 100%; margin-top: 10px; grid-template-columns: 42px minmax(0, 1fr) 42px; align-items: center; gap: 9px; }
+#registerPage .plan-date-control button { min-width: 0; padding: 0; border: 2.5px solid var(--st-ink); color: var(--st-ink); cursor: pointer; }
+#registerPage .plan-date-arrow { display: grid !important; width: 42px !important; min-width: 42px !important; height: 42px !important; min-height: 42px !important; border-radius: 50% !important; background: var(--st-yellow) !important; box-shadow: var(--st-shadow-small) !important; place-items: center; }
+#registerPage .plan-date-arrow svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+#registerPage .plan-date-current { display: flex !important; width: 100% !important; height: 42px !important; min-height: 42px !important; border-radius: var(--st-radius-pill) !important; background: #fff !important; box-shadow: var(--st-shadow-small) !important; align-items: center; justify-content: center; gap: 7px; white-space: nowrap; }
+#registerPage .plan-date-current strong { font-size: 15px; font-weight: 400; }
+#registerPage .plan-date-current em { padding: 3px 8px; border: 2px solid var(--st-ink); border-radius: var(--st-radius-pill); background: var(--st-pink); font-size: 11px; font-style: normal; line-height: 1; }
+#registerPage .plan-date-control button:hover { transform: translateY(-1px); }
+#registerPage .plan-date-control button:focus-visible { outline: 3px solid var(--st-pink); outline-offset: 2px; }
+#registerPage .plan-date-control button:disabled { opacity: .5; cursor: default; transform: none; }
 #registerPage #planDate,
 #registerPage #planDate:hover,
 #registerPage #planDate:active,
@@ -691,7 +720,8 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
 /* Keep the calendar control on the same visual line as the schedule filters. */
 .global-filterbar { min-height: 48px !important; flex-wrap: nowrap !important; align-items: center !important; }
 .gantt-month-controls { width: auto !important; flex: none !important; }
-.option-one-month-current { min-width: 168px !important; height: 44px !important; min-height: 44px !important; padding: 0 13px !important; border-width: 3px !important; box-shadow: 3px 3px 0 var(--st-ink) !important; font-size: 15px !important; justify-content: center !important; gap: 9px !important; }
+.option-one-month-current { min-width: 190px !important; height: 44px !important; min-height: 44px !important; padding: 0 12px !important; border-width: 3px !important; box-shadow: 3px 3px 0 var(--st-ink) !important; font-size: 15px !important; justify-content: center !important; gap: 8px !important; }
+.month-current-badge { padding: 3px 7px; border: 2px solid var(--st-ink); border-radius: var(--st-radius-pill); background: var(--st-pink); color: var(--st-ink); font-size: 9px; line-height: 1; white-space: nowrap; }
 .month-calendar-icon { position: static !important; width: 21px !important; height: 21px !important; }
 .option-one-month-current .month-chevron { margin-top: -3px !important; font-size: 19px !important; }
 .schedule-filter-actions { min-width: 0 !important; margin-left: auto !important; }

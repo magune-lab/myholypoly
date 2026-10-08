@@ -1547,35 +1547,16 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
   border-radius: 0;
   background: transparent;
   color: #F4F4F5;
-  font: 700 0/1 Arial, sans-serif;
   cursor: pointer;
   place-items: center;
   transition: background-color .14s ease, color .14s ease;
 }
-.window-control::before,
-.window-control::after { display: block; position: absolute; content: ''; }
-.window-control.minimize-app::before {
-  width: 11px;
-  height: 1.3px;
-  border-radius: 999px;
-  background: currentColor;
-  transform: translateY(4px);
-}
-.window-control.maximize-app::before {
-  width: 8px;
-  height: 8px;
-  border: 1.3px solid currentColor;
-  border-radius: 1.5px;
-}
-.window-control.maximize-app::after { display: none; }
-.window-control.close-app::before,
-.window-control.close-app::after { width: 12px; height: 1.3px; border-radius: 999px; background: currentColor; }
-.window-control.close-app::before { transform: rotate(45deg); }
-.window-control.close-app::after { transform: rotate(-45deg); }
+.window-control svg { width: 16px; height: 16px; overflow: visible; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.window-control .icon-restore { display: none; }
 .window-control:hover { background: #2A2B30; color: #fff; }
 .window-control.close-app:hover { background: #FF6F59; color: #fff; }
-body.is-maximized .window-control.maximize-app::before { z-index: 1; width: 8px; height: 8px; background: #191A1E; transform: translate(1.5px,1px); }
-body.is-maximized .window-control.maximize-app::after { display: block; width: 8px; height: 8px; border: 1.3px solid currentColor; border-radius: 1.5px; transform: translate(-1.5px,-1.5px); }
+body.is-maximized .window-control .icon-maximize { display: none; }
+body.is-maximized .window-control .icon-restore { display: block; }
 body.is-maximized .window-controls { top: 0; right: 0; }
 
 /* Registration inputs: draw one correctly aligned focus boundary per control. */
