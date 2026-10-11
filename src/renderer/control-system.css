@@ -11,7 +11,7 @@
   --control-focus: rgba(157,173,208,.62);
 }
 
-button, input, textarea, select { font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; }
+button, input, textarea, select { font-family: Jua, 'Malgun Gothic', sans-serif; }
 button { cursor: pointer; }
 button:disabled, input:disabled, textarea:disabled {
   cursor: not-allowed !important;
@@ -964,8 +964,8 @@ body { min-height: 100vh; }
   --control-fg: #463C29;
   --control-muted: #8C8068;
   --control-focus: rgba(255,111,89,.28);
-  --planner-display: 'Gaegu', MyHolyPolyNanum, sans-serif;
-  --planner-number: 'Baloo 2', MyHolyPolyNanum, sans-serif;
+  --planner-display: 'Gaegu', Jua, sans-serif;
+  --planner-number: 'Baloo 2', Jua, sans-serif;
 }
 
 html,
@@ -1100,7 +1100,7 @@ body {
 
 .sidebar-foot { display: grid; margin-top: auto; padding: 13px 6px 2px; border-top: 1px dashed #E8DDBE; grid-template-columns: 1fr 1fr; gap: 7px; }
 .close-app,
-.window-action { width: 100%; min-height: 35px; padding: 0 8px; border: 1px solid #E2D6B6; border-radius: 10px; background: rgba(255,255,255,.58); color: #8C8068; font: 700 10px MyHolyPolyNanum, 'Malgun Gothic', sans-serif; cursor: pointer; }
+.window-action { width: 100%; min-height: 35px; padding: 0 8px; border: 1px solid #E2D6B6; border-radius: 10px; background: rgba(255,255,255,.58); color: #8C8068; font: 700 10px Jua, 'Malgun Gothic', sans-serif; cursor: pointer; }
 .window-action:hover { border-color: #CFBF96; background: #fff; color: #5E543F; }
 .close-app:hover { border-color: #E1B7AD; background: rgba(255,111,89,.1); color: #C7503E; }
 
@@ -1133,7 +1133,7 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
 .global-filterbar .inline-month-current,
 .global-filterbar .inline-month-current:hover,
 .global-filterbar .inline-month-current[aria-expanded="true"] { color: #463C29; font-family: var(--planner-number); font-size: 14px; font-weight: 700; letter-spacing: .15px; }
-.global-filterbar .inline-month-current .month-chevron { margin-left: 12px; color: #9B8FAC; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 10px; font-weight: 700; }
+.global-filterbar .inline-month-current .month-chevron { margin-left: 12px; color: #9B8FAC; font-family: Jua, 'Malgun Gothic', sans-serif; font-size: 10px; font-weight: 700; }
 
 .app-page {
   height: 100%;
@@ -1149,7 +1149,7 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
 
 .page-title { display: flex; min-height: 74px; margin-bottom: 20px; align-items: flex-start; }
 .page-title h1,
-.register-section-title h2 { color: #463C29; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 28px; font-weight: 700; line-height: 1.25; letter-spacing: -1.4px; }
+.register-section-title h2 { color: #463C29; font-family: Jua, 'Malgun Gothic', sans-serif; font-size: 28px; font-weight: 700; line-height: 1.25; letter-spacing: -1.4px; }
 .eyebrow { color: #D8492F; font-size: 12px; font-weight: 700; }
 .muted, .task-count { color: #8C8068; }
 
@@ -1164,10 +1164,10 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
 }
 
 .scope-tabs { padding: 0; border: 0; background: transparent; gap: 8px; }
-.scope-tab { min-height: 40px; padding: 0 16px; border: 1px solid #E2D6B6; border-radius: 20px; background: #fff; color: #766C58; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: -.15px; box-shadow: 0 2px 7px rgba(110,88,44,.035); }
+.scope-tab { min-height: 40px; padding: 0 16px; border: 1px solid #E2D6B6; border-radius: 20px; background: #fff; color: #766C58; font-family: Jua, 'Malgun Gothic', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: -.15px; box-shadow: 0 2px 7px rgba(110,88,44,.035); }
 .scope-tab:hover { border-color: #D7C79F; background: #FFFDF7; color: #463C29; }
 .scope-tab.active { border-color: #FF6F59; background: #FF6F59; color: #fff; box-shadow: none; }
-.hide-completed { display: inline-flex; min-height: 32px; margin-left: 7px; padding: 0 2px 0 15px; border: 0; border-left: 1px solid #DDD1B3; border-radius: 0; background: transparent; color: #8C8068; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 10px; font-weight: 700; white-space: nowrap; align-items: center; gap: 7px; cursor: pointer; }
+.hide-completed { display: inline-flex; min-height: 32px; margin-left: 7px; padding: 0 2px 0 15px; border: 0; border-left: 1px solid #DDD1B3; border-radius: 0; background: transparent; color: #8C8068; font-family: Jua, 'Malgun Gothic', sans-serif; font-size: 10px; font-weight: 700; white-space: nowrap; align-items: center; gap: 7px; cursor: pointer; }
 .hide-completed::before { content: ''; display: inline-grid; width: 16px; height: 16px; border: 1.5px solid #CFC2A1; border-radius: 5px; background: #fff; color: #fff; font-size: 10px; line-height: 1; place-items: center; }
 .hide-completed:hover { color: #463C29; }
 .hide-completed:hover::before { border-color: #AFA17E; }
@@ -1175,7 +1175,7 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
 .hide-completed.active::before { content: '✓'; border-color: #35A77B; background: #35A77B; }
 
 .view-count-row { min-height: 24px; margin: 0 0 13px; padding: 0 3px; }
-.task-count { color: #766C58; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: -.1px; }
+.task-count { color: #766C58; font-family: Jua, 'Malgun Gothic', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: -.1px; }
 
 .gantt-chart { border-color: #E8DDBE; border-radius: 14px; background: #fff; }
 .gantt-table th,
@@ -1223,7 +1223,7 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
 .schedule-menu { position: absolute; top: 33px; right: 0; display: none; width: 126px; padding: 4px; border: 1px solid #DCCFAF; border-radius: 10px; background: #FFFEFB; box-shadow: 0 10px 24px rgba(76,58,24,.14); }
 .schedule-menu.open { display: grid; }
 .action-course:has(.schedule-menu.open) { z-index: 12; }
-.schedule-menu button { display: flex; min-height: 33px; padding: 0 9px; border: 0; border-radius: 7px; background: transparent; color: #554B38; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 10px; font-weight: 700; text-align: left; align-items: center; gap: 7px; cursor: pointer; }
+.schedule-menu button { display: flex; min-height: 33px; padding: 0 9px; border: 0; border-radius: 7px; background: transparent; color: #554B38; font-family: Jua, 'Malgun Gothic', sans-serif; font-size: 10px; font-weight: 700; text-align: left; align-items: center; gap: 7px; cursor: pointer; }
 .schedule-menu button:hover { background: #F8F1E2; }
 .schedule-menu button span { width: 16px; color: #8C8068; font-size: 15px; text-align: center; }
 .schedule-menu button[data-delete-schedule] { color: #B94D3B; }
@@ -1353,7 +1353,7 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
   border-radius: 12px;
   background: #FBF6E7;
   color: #8C8068;
-  font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif;
+  font-family: Jua, 'Malgun Gothic', sans-serif;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -1479,7 +1479,7 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
   border-radius: 10px;
   background: #FBF6E7;
   color: #766A52;
-  font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif;
+  font-family: Jua, 'Malgun Gothic', sans-serif;
   font-size: 10px;
   font-weight: 700;
   cursor: pointer;
@@ -1508,7 +1508,7 @@ body.is-maximized .topbar { top: 34px; bottom: 0; left: 0; border-radius: 0; }
   border-radius: 10px;
   background: #FBF6E7;
 }
-#registerPage .stacked-course-head > input { min-width: 0; padding: 0 12px; color: #463C29; font: 700 13px MyHolyPolyNanum, 'Malgun Gothic', sans-serif; }
+#registerPage .stacked-course-head > input { min-width: 0; padding: 0 12px; color: #463C29; font: 700 13px Jua, 'Malgun Gothic', sans-serif; }
 #registerPage .stacked-course-head label { display: grid; padding-left: 10px; color: #8C8068; font-size: 9px; grid-template-columns: auto 1fr; align-items: center; gap: 4px; }
 #registerPage .stacked-course-head label input { width: 100%; height: 38px; padding: 0 8px; border: 0; background: transparent; color: #6E624C; font-size: 10px; }
 #registerPage .stacked-course .focus-course-lines { margin-top: 12px; }
@@ -1651,7 +1651,7 @@ button,
 input,
 textarea,
 select {
-  font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif !important;
+  font-family: Jua, 'Malgun Gothic', sans-serif !important;
 }
 .topbar .brand { font-family: var(--planner-display) !important; }
 .course-number,
@@ -1863,61 +1863,6 @@ select {
   background: #FFE0D8;
   color: #B83D2C;
 }
-#registerPage .focus-course-line .ai-suggest-line {
-  width: 82px;
-  border: 1px solid #DDD6F3;
-  background: #F2EFFC;
-  color: #6756A6;
-}
-#registerPage .focus-course-line .ai-suggest-line:hover { border-color: #C7BCE9; background: #EAE4FA; color: #51418D; }
-#registerPage .focus-course-line .ai-suggest-line:disabled { cursor: wait; opacity: .65; }
-#registerPage .focus-course-line .ai-compare-line { width: 82px; border: 1px solid #DDD6F3; background: #F2EFFC; color: #6756A6; }
-#registerPage .focus-course-line .ai-compare-line:hover { border-color: #C7BCE9; background: #EAE4FA; color: #51418D; }
-#registerPage .ai-comparison { margin: 0 10px 12px 54px; padding: 13px; border-radius: 11px; background: #F5F1FD; color: #514733; }
-#registerPage .ai-comparison-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-#registerPage .ai-comparison-columns > div + div { padding-left: 14px; border-left: 1px solid #DDD6F3; }
-#registerPage .ai-comparison b { display: block; margin-bottom: 6px; color: #7D719F; font-size: 10px; }
-#registerPage .ai-comparison p { margin: 0; color: #625844; font-size: 11px; line-height: 1.55; white-space: pre-wrap; }
-#registerPage .ai-comparison-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 11px; }
-#registerPage .ai-comparison-actions button { min-height: 30px; padding: 0 10px; border: 1px solid #DDD6F3; border-radius: 8px; background: #fff; color: #6756A6; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 9px; font-weight: 700; }
-#registerPage .ai-comparison-actions button:hover { background: #EAE4FA; }
-
-.ai-settings-dialog {
-  width: min(520px, calc(100vw - 32px));
-  padding: 0;
-  border: 1px solid #E2D6B6;
-  border-radius: 18px;
-  background: #FFFEFB;
-  color: #514733;
-  box-shadow: 0 24px 70px rgba(61,49,24,.22);
-}
-.ai-settings-dialog::backdrop { background: rgba(38,31,20,.42); backdrop-filter: blur(2px); }
-.ai-settings-card { padding: 22px; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; }
-.ai-settings-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-.ai-settings-head span { color: #C7503E; font-size: 10px; font-weight: 700; }
-.ai-settings-head h2 { margin: 4px 0 0; color: #463C29; font-size: 20px; }
-.ai-settings-head > button { width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px; background: #F4EEDF; color: #766A52; font-size: 20px; cursor: pointer; }
-.ai-settings-description { margin: 14px 0; color: #746952; font-size: 12px; line-height: 1.6; }
-.ai-key-guide { margin: 0; padding: 14px 16px 14px 34px; border-radius: 12px; background: #FBF6E7; color: #665B47; font-size: 11px; line-height: 1.85; }
-.ai-key-guide button { padding: 0; border: 0; border-bottom: 1px solid currentColor; background: transparent; color: #C7503E; font: inherit; font-weight: 700; cursor: pointer; }
-.ai-key-cost { margin: 9px 0 0; padding: 9px 11px; border-radius: 9px; background: #F2EFFC; color: #675E7B; font-size: 9px; line-height: 1.5; }
-.ai-key-field { display: grid; gap: 7px; margin-top: 16px; color: #665B47; font-size: 11px; font-weight: 700; }
-.ai-key-field input { height: 42px; padding: 0 12px; border: 1px solid #E2D6B6; border-radius: 10px; background: #fff; color: #463C29; font: 12px Consolas, monospace; outline: 0; }
-.ai-key-field input:focus { border-color: #FF806B; box-shadow: 0 0 0 3px rgba(255,111,89,.15); }
-.ai-key-status { min-height: 18px; margin: 8px 0 0; color: #5D7A63; font-size: 10px; }
-.ai-key-security { margin: 8px 0 0; color: #9A8F78; font-size: 9px; line-height: 1.5; }
-.ai-settings-actions { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 8px; margin-top: 18px; }
-.ai-settings-actions button { min-height: 34px; padding: 0 12px; border: 1px solid #E2D6B6; border-radius: 9px; background: #fff; color: #766A52; font-family: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
-.ai-settings-actions .danger { border-color: #EECBC4; color: #B84A39; }
-.ai-settings-actions .primary { border-color: #FF6F59; background: #FF6F59; color: #fff; }
-@media(max-width: 720px) {
-  #registerPage .focus-course-line { grid-template-columns: 26px minmax(0, 1fr) 72px 40px; column-gap: 6px; }
-  #registerPage .focus-course-line .ai-suggest-line,
-  #registerPage .focus-course-line .ai-compare-line { width: 72px; }
-  #registerPage .ai-comparison { margin-left: 12px; }
-  #registerPage .ai-comparison-columns { grid-template-columns: 1fr; }
-  #registerPage .ai-comparison-columns > div + div { padding: 10px 0 0; border-top: 1px solid #DDD6F3; border-left: 0; }
-}
 #registerPage .stacked-course .add-focus-line {
   color: #C84B35;
   font-size: 12px;
@@ -1930,7 +1875,7 @@ select {
 .inline-editor-title { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 0 2px 12px; border-bottom: 1px solid #F0E8CD; }
 .inline-editor-title strong { overflow: hidden; color: #514733; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .inline-editor-title small { flex: 0 0 auto; color: #A3967A; font-size: 9px; font-weight: 700; }
-.inline-course-tasks input { width: 100%; height: 38px; border: 1px solid #E2D6B6; border-radius: 10px; background: #FFFEFB; color: #514733; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 13px; outline: 0; }
+.inline-course-tasks input { width: 100%; height: 38px; border: 1px solid #E2D6B6; border-radius: 10px; background: #FFFEFB; color: #514733; font-family: Jua, 'Malgun Gothic', sans-serif; font-size: 13px; outline: 0; }
 .inline-course-tasks input:focus { border-color: var(--course-border); box-shadow: 0 0 0 3px var(--course-soft); }
 .inline-course-tasks { display: grid; gap: 7px; margin-top: 13px; }
 .inline-course-tasks > div { display: grid; grid-template-columns: 24px minmax(0,1fr) 44px; align-items: center; gap: 7px; }

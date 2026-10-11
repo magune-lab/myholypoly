@@ -1,10 +1,10 @@
 import { execFile, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { promisify } from 'node:util';
 
 const EPOLY_PATH = 'C:\\Program Files (x86)\\KOREAPOLYSCHOOL\\e-POLY\\e-POLY.exe';
-const DEBUG_PORT = 9222;
-const debugUrl = `http://127.0.0.1:${DEBUG_PORT}`;
+let debugPort = null;
 const execFileAsync = promisify(execFile);
 const timeout = (promise, ms = 2500) => Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('e-POLY 연결 시간이 초과되었습니다.')), ms))]);
 
@@ -16,7 +16,8 @@ async function isEpolyRunning() {
 }
 
 async function targets() {
-  const response = await timeout(fetch(`${debugUrl}/json`));
+  if (!debugPort) throw new Error('e-POLY를 myholypoly에서 다시 실행해 주세요.');
+  const response = await timeout(fetch(`http://127.0.0.1:${debugPort}/json`));
   if (!response.ok) throw new Error('e-POLY 연동 포트에 연결할 수 없습니다.');
   return response.json();
 }
@@ -66,7 +67,16 @@ export async function getEpolyStatus() {
 }
 export async function launchEpoly() {
   if (!existsSync(EPOLY_PATH)) throw new Error('e-POLY 설치 위치를 찾을 수 없습니다.');
-  spawn(EPOLY_PATH, [`--remote-debugging-port=${DEBUG_PORT}`], { detached: true, stdio: 'ignore' }).unref();
+  debugPort = await new Promise((resolve, reject) => {
+    const server = createServer();
+    server.unref();
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const port = server.address().port;
+      server.close(error => error ? reject(error) : resolve(port));
+    });
+  });
+  spawn(EPOLY_PATH, [`--remote-debugging-address=127.0.0.1`, `--remote-debugging-port=${debugPort}`], { detached: true, stdio: 'ignore' }).unref();
   return { started: true };
 }
 export async function captureOpenHomework() {

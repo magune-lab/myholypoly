@@ -15,60 +15,6 @@ async function toggleMaximize() {
 $('#maximizeApp').onclick = toggleMaximize;
 const brand = document.querySelector('.brand');
 if (brand) brand.ondblclick = toggleMaximize;
-const aiSettingsDialog = $('#aiSettingsDialog');
-function updateAiSettingsButton(configured) {
-  const state = $('#aiConnectionState');
-  state.classList.toggle('connected', configured);
-  state.innerHTML = `<i aria-hidden="true"></i>${configured ? 'AI 자동 정리 사용 중' : 'AI 자동 정리 꺼짐'}`;
-  $('#aiSettings').textContent = '설정';
-}
-async function openAiSettings() {
-  $('#geminiApiKey').value = '';
-  $('#aiKeyStatus').textContent = '확인 중…';
-  aiSettingsDialog.showModal();
-  try {
-    const [{ configured }, { rules }] = await Promise.all([bridge.ai.keyStatus(), bridge.ai.readRules()]);
-    updateAiSettingsButton(configured);
-    $('#aiCustomRules').value = rules || '';
-    $('#aiKeyStatus').textContent = configured ? 'API 키가 안전하게 등록되어 있습니다.' : '등록된 API 키가 없습니다.';
-    $('#deleteAiKey').hidden = !configured;
-  } catch (error) { $('#aiKeyStatus').textContent = error.message; }
-}
-$('#aiSettings').onclick = openAiSettings;
-$('#closeAiSettings').onclick = () => aiSettingsDialog.close();
-$('#cancelAiSettings').onclick = () => aiSettingsDialog.close();
-$('#openApiKeys').onclick = () => bridge.ai.openApiKeys();
-$('#openGeminiGuide').onclick = () => bridge.ai.openGuide();
-$('#saveAiKey').onclick = async () => {
-  try {
-    const key = $('#geminiApiKey').value.trim();
-    if (key) await bridge.ai.saveKey(key);
-    else {
-      const { configured } = await bridge.ai.keyStatus();
-      if (!configured) throw new Error('Gemini API 키를 입력해 주세요.');
-    }
-    await bridge.ai.saveRules($('#aiCustomRules').value);
-    $('#geminiApiKey').value = '';
-    $('#aiKeyStatus').textContent = 'API 키와 AI 정리 규칙을 저장했습니다.';
-    $('#deleteAiKey').hidden = false;
-    updateAiSettingsButton(true);
-  } catch (error) { $('#aiKeyStatus').textContent = error.message; }
-};
-$('#resetAiRules').onclick = async () => {
-  try {
-    await bridge.ai.resetRules();
-    $('#aiCustomRules').value = '';
-    $('#aiKeyStatus').textContent = '추가 정리 규칙을 초기화했습니다. 기본 규칙은 계속 적용됩니다.';
-  } catch (error) { $('#aiKeyStatus').textContent = error.message; }
-};
-$('#deleteAiKey').onclick = async () => {
-  await bridge.ai.deleteKey();
-  $('#geminiApiKey').value = '';
-  $('#aiKeyStatus').textContent = '등록된 API 키를 삭제했습니다.';
-  $('#deleteAiKey').hidden = true;
-  updateAiSettingsButton(false);
-};
-bridge.ai.keyStatus().then(({ configured }) => updateAiSettingsButton(configured)).catch(() => updateAiSettingsButton(false));
 let source = 'manual';
 let courses = [];
 let activeCourseIndex = 0;
@@ -100,8 +46,6 @@ let hideCompleted = localStorage.getItem(hideCompletedStorageKey) === 'true';
 let registerStep = 1;
 let statusRefreshPromise = null;
 const maxCourses = 5;
-const expandedComparisons = new Set();
-const expandedOriginalCourses = new Set();
 const lines = course => String(course.detail || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
 const isItemComplete = item => { const itemLines = lines(item); return itemLines.length > 0 && itemLines.every((_, index) => Boolean(item.done?.[index])); };
 const escapeHtml = value => String(value || '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
@@ -217,38 +161,27 @@ function renderCourses() {
   activeCourseIndex = Math.min(activeCourseIndex, courses.length - 1);
   editor.innerHTML = courses.map((course, courseIndex) => {
     const itemLines = String(course.detail || '').split(/\r?\n/);
-    const originalLines = course.originalLines || itemLines;
-    const refinedLines = course.refinedLines || [];
-    const originalDetail = (course.originalLines || []).join('\n');
-    const aiRefined = originalDetail.trim() !== String(course.detail || '').trim();
     const palette = coursePalette(course.title || `과목 ${courseIndex + 1}`);
     const taskCount = Math.max(1, itemLines.filter(line => line.trim()).length);
     const dueDiff = course.dueDate ? Math.ceil((new Date(`${course.dueDate}T00:00:00`) - new Date(`${today}T00:00:00`)) / 86400000) : '';
     const dueBadge = dueDiff === '' ? '마감일 없음' : dueDiff < 0 ? '기한 지남' : dueDiff === 0 ? 'D-day' : `D-${dueDiff}`;
     const taskMarkup = itemLines.map((line, lineIndex) => {
-      const refined = Boolean(refinedLines[lineIndex]);
       const comparisonKey = `${courseIndex}:${lineIndex}`;
       return `<div class="focus-course-entry"><label class="focus-course-line"><span>${String(lineIndex + 1).padStart(2, '0')}</span><span class="task-input-wrap"><input data-course-line="${courseIndex}" data-line="${lineIndex}" value="${escapeHtml(line)}" placeholder="할 일"></span><button type="button" data-remove-line="${comparisonKey}" aria-label="항목 삭제">삭제</button></label></div>`;
     }).join('');
-    const showOriginal = aiRefined && expandedOriginalCourses.has(courseIndex);
-    const comparison = showOriginal ? `<div class="schedule-original-comparison"><div><b>불러온 원본</b><p>${escapeHtml(originalDetail).replace(/\n/g, '<br>')}</p></div><div><b>AI로 구성한 일정</b><p>${escapeHtml(course.detail).replace(/\n/g, '<br>')}</p></div><button type="button" data-restore-course="${courseIndex}">이 과목은 원본 사용</button></div>` : '';
-    const aiBadge = aiRefined ? '<span class="course-accordion-chip ai-organized-chip">AI 정리</span>' : '';
-    const originalButton = aiRefined ? `<button type="button" class="show-course-original" data-show-course-original="${courseIndex}" aria-expanded="${showOriginal}">${showOriginal ? '원본 닫기' : '원본 보기'}</button>` : '';
-    return `<article class="stacked-course ${courseIndex === activeCourseIndex ? 'active' : ''}" data-course="${courseIndex}" style="--course-bg:${palette.bg};--course-soft:${palette.soft}"><button type="button" class="course-accordion-head" data-toggle-course="${courseIndex}" aria-expanded="${courseIndex === activeCourseIndex}"><span class="course-accordion-number">${courseIndex + 1}</span><span class="course-accordion-summary"><strong class="course-accordion-name">${escapeHtml(course.title || '새 과목')}</strong><small>마감 ${course.dueDate ? formatDate(course.dueDate) : '미정'}</small></span>${aiBadge}<span class="course-accordion-chip">${dueBadge}</span><span class="course-accordion-chip">할 일 ${taskCount}개</span><span class="course-accordion-chevron" aria-hidden="true"></span></button><div class="course-accordion-body"><div class="course-original-tools">${originalButton}</div>${comparison}<div class="focus-course-lines">${taskMarkup}</div><button class="add-focus-line" data-add-line="${courseIndex}" type="button">＋ 내용 추가</button></div></article>`;
+    return `<article class="stacked-course ${courseIndex === activeCourseIndex ? 'active' : ''}" data-course="${courseIndex}" style="--course-bg:${palette.bg};--course-soft:${palette.soft}"><button type="button" class="course-accordion-head" data-toggle-course="${courseIndex}" aria-expanded="${courseIndex === activeCourseIndex}"><span class="course-accordion-number">${courseIndex + 1}</span><span class="course-accordion-summary"><strong class="course-accordion-name">${escapeHtml(course.title || '새 과목')}</strong><small>마감 ${course.dueDate ? formatDate(course.dueDate) : '미정'}</small></span><span class="course-accordion-chip">${dueBadge}</span><span class="course-accordion-chip">할 일 ${taskCount}개</span><span class="course-accordion-chevron" aria-hidden="true"></span></button><div class="course-accordion-body"><div class="focus-course-lines">${taskMarkup}</div><button class="add-focus-line" data-add-line="${courseIndex}" type="button">＋ 내용 추가</button></div></article>`;
   }).join('');
   const selectCourse = index => { activeCourseIndex = index; editor.querySelectorAll('.stacked-course').forEach((card, cardIndex) => { const active = cardIndex === index; card.classList.toggle('active', active); card.querySelector('.course-accordion-head')?.setAttribute('aria-expanded', String(active)); }); };
   editor.querySelectorAll('.stacked-course').forEach((card, index) => card.onclick = () => selectCourse(index));
   editor.querySelectorAll('[data-toggle-course]').forEach(button => button.onclick = event => { event.preventDefault(); event.stopPropagation(); selectCourse(Number(button.dataset.toggleCourse)); });
   editor.querySelectorAll('[data-course-title]').forEach(input => input.oninput = event => { const index = Number(event.target.dataset.courseTitle); courses[index].title = event.target.value; event.target.closest('.stacked-course')?.querySelector('.course-accordion-name')?.replaceChildren(event.target.value || '새 과목'); selectCourse(index); });
   editor.querySelectorAll('[data-course-due]').forEach(input => { input.oninput = event => { const index = Number(event.target.dataset.courseDue); courses[index].dueDate = event.target.value; const summaryDate = event.target.closest('.stacked-course')?.querySelector('.course-accordion-summary small'); if (summaryDate) summaryDate.textContent = `마감 ${event.target.value ? formatDate(event.target.value) : '미정'}`; selectCourse(index); }; bindDatePicker(input); });
-  editor.querySelectorAll('[data-course-line]').forEach(input => input.oninput = event => { const index = Number(event.target.dataset.courseLine); const lineIndex = Number(event.target.dataset.line); const card = event.target.closest('.stacked-course'); if (!courses[index].refinedLines?.[lineIndex]) courses[index].originalLines[lineIndex] = event.target.value; courses[index].detail = [...card.querySelectorAll('[data-course-line]')].map(node => node.value).join('\n'); selectCourse(index); });
-  editor.querySelectorAll('[data-show-course-original]').forEach(button => button.onclick = event => { event.preventDefault(); event.stopPropagation(); const index = Number(button.dataset.showCourseOriginal); if (expandedOriginalCourses.has(index)) expandedOriginalCourses.delete(index); else expandedOriginalCourses.add(index); activeCourseIndex = index; renderCourses(); });
-  editor.querySelectorAll('[data-restore-course]').forEach(button => button.onclick = event => { event.stopPropagation(); const index = Number(button.dataset.restoreCourse); const course = courses[index]; course.detail = course.originalLines.join('\n'); course.refinedLines = course.originalLines.map(() => false); expandedOriginalCourses.delete(index); setMessage('선택한 과목을 불러온 원본으로 복원했습니다.'); renderCourses(); });
-  editor.querySelectorAll('[data-remove-line]').forEach(button => button.onclick = event => { event.stopPropagation(); const [courseIndex, lineIndex] = button.dataset.removeLine.split(':').map(Number); const course = courses[courseIndex]; const values = String(course.detail || '').split(/\r?\n/); values.splice(lineIndex, 1); course.originalLines.splice(lineIndex, 1); course.refinedLines.splice(lineIndex, 1); course.detail = values.join('\n'); expandedComparisons.clear(); activeCourseIndex = courseIndex; renderCourses(); });
-  editor.querySelectorAll('[data-add-line]').forEach(button => button.onclick = event => { event.stopPropagation(); const index = Number(button.dataset.addLine); const course = courses[index]; course.detail = `${course.detail}${course.detail ? '\n' : ''}새 항목`; course.originalLines.push('새 항목'); course.refinedLines.push(false); activeCourseIndex = index; renderCourses(); const card = editor.querySelector(`[data-course="${index}"]`); const inputs = card.querySelectorAll('[data-course-line]'); inputs[inputs.length - 1].focus(); inputs[inputs.length - 1].select(); });
+  editor.querySelectorAll('[data-course-line]').forEach(input => input.oninput = event => { const index = Number(event.target.dataset.courseLine); const card = event.target.closest('.stacked-course'); courses[index].detail = [...card.querySelectorAll('[data-course-line]')].map(node => node.value).join('\n'); selectCourse(index); });
+  editor.querySelectorAll('[data-remove-line]').forEach(button => button.onclick = event => { event.stopPropagation(); const [courseIndex, lineIndex] = button.dataset.removeLine.split(':').map(Number); const course = courses[courseIndex]; const values = String(course.detail || '').split(/\r?\n/); values.splice(lineIndex, 1); course.detail = values.join('\n'); activeCourseIndex = courseIndex; renderCourses(); });
+  editor.querySelectorAll('[data-add-line]').forEach(button => button.onclick = event => { event.stopPropagation(); const index = Number(button.dataset.addLine); const course = courses[index]; course.detail = `${course.detail}${course.detail ? '\n' : ''}새 항목`; activeCourseIndex = index; renderCourses(); const card = editor.querySelector(`[data-course="${index}"]`); const inputs = card.querySelectorAll('[data-course-line]'); inputs[inputs.length - 1].focus(); inputs[inputs.length - 1].select(); });
   $('#deleteCourse').onclick = () => {
     if (courses.length <= 1) {
-      courses = [{ title: '', detail: '', originalLines: [''], refinedLines: [false], dueDate: '', startDate: $('#planDate').value }];
+      courses = [{ title: '', detail: '', dueDate: '', startDate: $('#planDate').value }];
       activeCourseIndex = 0;
     } else {
       courses.splice(activeCourseIndex, 1);
@@ -256,28 +189,9 @@ function renderCourses() {
     }
     renderCourses();
   };
-  const hasAiChanges = courses.some(course => course.originalLines.join('\n').trim() !== String(course.detail || '').trim());
-  $('#compareAllOriginals').hidden = !hasAiChanges;
-  const changedIndices = courses.map((course, index) => course.originalLines.join('\n').trim() !== String(course.detail || '').trim() ? index : -1).filter(index => index >= 0);
-  $('#compareAllOriginals').textContent = changedIndices.length && changedIndices.every(index => expandedOriginalCourses.has(index)) ? '전체 비교 닫기' : '전체 원본 비교';
 }
-function setCourses(items) { expandedComparisons.clear(); expandedOriginalCourses.clear(); courses = items.map(item => { const detail = item.detail || ''; const itemLines = String(detail).split(/\r?\n/); const originals = Array.isArray(item.originalLines) ? item.originalLines : String(item.originalDetail ?? detail).split(/\r?\n/); const changed = originals.join('\n').trim() !== detail.trim(); return { title: item.title || '', detail, originalLines: originals, refinedLines: itemLines.map(() => changed), dueDate: item.dueDate || '', startDate: item.startDate || '' }; }); activeCourseIndex = 0; renderCourses(); }
-async function organizeImportedCourses(items) {
-  const { configured } = await bridge.ai.keyStatus();
-  if (!configured) return { items, organized: false };
-  setStepMessage(3, 'AI가 전체 일정을 보기 좋게 구성하고 있습니다.');
-  const result = await bridge.ai.organizeSchedule(items);
-  const organizedByIndex = new Map((result.items || []).map(item => [Number(item.courseIndex), item.detail]));
-  return {
-    organized: true,
-    items: items.map((item, index) => {
-      const originalDetail = String(item.detail || '');
-      const detail = organizedByIndex.get(index) || originalDetail;
-      return { ...item, detail, originalDetail, originalLines: originalDetail.split(/\r?\n/), refinedLines: detail.split(/\r?\n/).map(() => detail.trim() !== originalDetail.trim()) };
-    })
-  };
-}
-function draft() { return { date: $('#planDate').value, source, items: courses.filter(course => course.title).map(course => ({ title: course.title, detail: course.detail, originalDetail: course.originalLines.join('\n'), refinedLines: course.refinedLines, dueDate: course.dueDate, startDate: course.startDate || $('#planDate').value })) }; }
+function setCourses(items) { courses = items.map(item => ({ title: item.title || '', detail: item.detail || '', dueDate: item.dueDate || '', startDate: item.startDate || '' })); activeCourseIndex = 0; renderCourses(); }
+function draft() { return { date: $('#planDate').value, source, items: courses.filter(course => course.title).map(course => ({ title: course.title, detail: course.detail, dueDate: course.dueDate, startDate: course.startDate || $('#planDate').value })) }; }
 function setEditingMode(target = null) { editingTarget = target; const editing = Boolean(target); $('#addTask').hidden = editing; $('#deleteCourse').hidden = editing; $('#planDate').disabled = editing; ['#planDatePrevious', '#planDateButton', '#planDateNext'].forEach(selector => { $(selector).disabled = editing; }); $('#register').textContent = editing ? '수정 저장' : '일정 등록'; }
 const dateValue = value => value ? new Date(`${value}T00:00:00`) : null;
 const formatDate = value => value ? value.slice(5).replace('-', '.') : '마감일 없음';
@@ -420,18 +334,11 @@ $('#datePickerBackToMonths').onclick = event => { event.stopPropagation(); dateP
 $('#datePickerToday').onclick = event => { event.stopPropagation(); if (!activeDateInput) return; activeDateInput.value = today; activeDateInput.dispatchEvent(new Event('input', { bubbles: true })); closeDatePicker(); };
 $('#datePickerPopover').onclick = event => event.stopPropagation();
 document.addEventListener('click', closeDatePicker);
-$('#addTask').onclick = () => { if (courses.length >= maxCourses) { setMessage(`과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, true); return setStepMessage(4, `과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, 'error'); } courses.push({ title: '', detail: '', originalLines: [''], refinedLines: [false], dueDate: '', startDate: $('#planDate').value }); activeCourseIndex = courses.length - 1; renderCourses(); requestAnimationFrame(() => $('#courseEditor .stacked-course:last-child')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })); };
-$('#compareAllOriginals').onclick = () => {
-  const changedIndices = courses.map((course, index) => course.originalLines.join('\n').trim() !== String(course.detail || '').trim() ? index : -1).filter(index => index >= 0);
-  const shouldOpen = changedIndices.some(index => !expandedOriginalCourses.has(index));
-  expandedOriginalCourses.clear();
-  if (shouldOpen) changedIndices.forEach(index => expandedOriginalCourses.add(index));
-  renderCourses();
-};
+$('#addTask').onclick = () => { if (courses.length >= maxCourses) { setMessage(`과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, true); return setStepMessage(4, `과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, 'error'); } courses.push({ title: '', detail: '', dueDate: '', startDate: $('#planDate').value }); activeCourseIndex = courses.length - 1; renderCourses(); requestAnimationFrame(() => $('#courseEditor .stacked-course:last-child')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })); };
 $('#launchEpoly').onclick = async () => { setStepMessage(1, 'e-POLY를 실행하고 있습니다.'); try { await bridge.epoly.launch(); setStepMessage(1, 'e-POLY를 실행했습니다.', 'success'); setRegisterStep(2); setMessage('e-POLY를 여는 중입니다.'); setTimeout(() => refreshStatus().catch(error => setStepMessage(1, error.message, 'error')), 1500); } catch (error) { setMessage(error.message, true); setStepMessage(1, error.message, 'error'); } };
 $('#openEpolyInstallGuide').onclick = () => bridge.epoly.openInstallGuide();
 $('#openCalendar').onclick = async () => { setStepMessage(2, '캘린더를 열고 있습니다.'); try { const result = await bridge.epoly.openCalendar(); if (!result.opened) { setMessage(result.message, true); return setStepMessage(2, result.message, 'error'); } setStepMessage(2, '캘린더를 열었습니다.', 'success'); setRegisterStep(3); setMessage('e-POLY 캘린더를 여는 중입니다.'); setTimeout(() => refreshStatus().catch(error => setStepMessage(2, error.message, 'error')), 1200); } catch (error) { setMessage(error.message, true); setStepMessage(2, error.message, 'error'); } };
-$('#getToday').onclick = async () => { const selectedDate = $('#planDate').value; const button = $('#getToday'); setEditingMode(); setRegisterStep(3, { allowBack: true }); setStepMessage(3, `${selectedDate} 일정을 확인하고 있습니다.`); button.disabled = true; try { const isToday = selectedDate === today; const result = isToday ? await bridge.epoly.todayHomework() : await bridge.epoly.dateHomework(selectedDate); source = isToday ? 'epoly-today' : 'epoly-date'; $('#sourceLabel').textContent = isToday ? 'e-POLY 오늘' : `e-POLY ${selectedDate}`; if (!result.tasks.length) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(3, { allowBack: true }); setMessage(''); return setStepMessage(3, `${selectedDate}에 등록된 숙제가 없습니다.`, 'empty'); } let prepared; try { prepared = await organizeImportedCourses(result.tasks); } catch (aiError) { prepared = { items: result.tasks, organized: false }; setMessage(`AI 일정 정리를 적용하지 못해 원본을 불러왔습니다. ${aiError.message}`, true); } setCourses(prepared.items); setRegisterStep(4); if (prepared.organized) { setMessage('AI가 전체 일정을 정리했습니다. 필요하면 원본 보기를 눌러 비교할 수 있습니다.'); setStepMessage(4, `${result.tasks.length}개 과목을 AI로 구성했습니다. 내용을 확인해 주세요.`, 'success'); } else { if (!$('#message').textContent) setMessage(`${selectedDate} 숙제를 가져왔습니다.`); setStepMessage(4, `${result.tasks.length}개 과목을 가져왔습니다. 내용을 확인해 주세요.`, 'success'); } } catch (error) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(3, { allowBack: true }); setMessage(error.message, true); setStepMessage(3, error.message, 'error'); } finally { button.disabled = false; } };
+$('#getToday').onclick = async () => { const selectedDate = $('#planDate').value; const button = $('#getToday'); setEditingMode(); setRegisterStep(3, { allowBack: true }); setStepMessage(3, `${selectedDate} 일정을 확인하고 있습니다.`); button.disabled = true; try { const isToday = selectedDate === today; const result = isToday ? await bridge.epoly.todayHomework() : await bridge.epoly.dateHomework(selectedDate); source = isToday ? 'epoly-today' : 'epoly-date'; $('#sourceLabel').textContent = isToday ? 'e-POLY 오늘' : `e-POLY ${selectedDate}`; if (!result.tasks.length) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(3, { allowBack: true }); setMessage(''); return setStepMessage(3, `${selectedDate}에 등록된 숙제가 없습니다.`, 'empty'); } setCourses(result.tasks); setRegisterStep(4); setMessage(`${selectedDate} 숙제를 가져왔습니다.`); setStepMessage(4, `${result.tasks.length}개 과목을 가져왔습니다. 내용을 확인해 주세요.`, 'success'); } catch (error) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(3, { allowBack: true }); setMessage(error.message, true); setStepMessage(3, error.message, 'error'); } finally { button.disabled = false; } };
 function updateHistoryControls() {
   if ($('#historyBack')) $('#historyBack').disabled = pageHistoryIndex <= 0;
   if ($('#historyForward')) $('#historyForward').disabled = pageHistoryIndex >= pageHistory.length - 1;

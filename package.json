@@ -1,7 +1,9 @@
 {
   "name": "myholypoly",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": true,
+  "author": "magune-lab",
+  "license": "MIT",
   "description": "A Windows companion for e-POLY homework planning.",
   "main": "src/main.mjs",
   "scripts": {
@@ -19,6 +21,9 @@
     "files": [
       "src/**/*",
       "assets/**/*",
+      "LICENSE",
+      "PRIVACY.md",
+      "THIRD-PARTY-NOTICES.md",
       "package.json"
     ],
     "win": {

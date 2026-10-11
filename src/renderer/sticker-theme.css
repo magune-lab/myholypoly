@@ -222,7 +222,6 @@ body.is-maximized .topbar {
 .focus-register,
 #registerPage .import-card-block,
 .note-card,
-.ai-settings-dialog,
 .month-popover,
 .date-picker-popover {
   border: var(--st-border) !important;
@@ -237,8 +236,7 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
 #registerPage .course-toolbar-actions button,
 #registerPage .import-card-block > button,
 #registerPage .epoly-install-help button,
-.date-picker-foot button,
-.ai-settings-actions button {
+.date-picker-foot button {
   min-height: 44px !important;
   border: 3px solid var(--st-ink) !important;
   border-radius: var(--st-radius-pill) !important;
@@ -252,8 +250,7 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
 .hide-completed:active,
 #registerPage .course-toolbar-actions button:active,
 #registerPage .import-card-block > button:active,
-.date-picker-foot button:active,
-.ai-settings-actions button:active {
+.date-picker-foot button:active {
   box-shadow: 1px 1px 0 var(--st-ink) !important;
   transform: translate(3px, 3px) !important;
 }
@@ -456,12 +453,6 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
 #registerPage .epoly-copy span { margin-top: 4px !important; color: var(--st-sub) !important; font-size: 12px !important; }
 #registerPage .epoly-import-card .app-launch { background: var(--st-pink) !important; }
 #registerPage .calendar-import-card .load-schedule { background: var(--st-yellow) !important; }
-#registerPage .ai-import-status { display: flex; min-height: 38px; margin-top: 10px; align-items: center; justify-content: space-between; gap: 10px; }
-#registerPage .ai-import-status > span { display: inline-flex; min-width: 0; flex: 1 1 auto; overflow: hidden; color: var(--st-sub); font-size: 10px; align-items: center; gap: 6px; white-space: nowrap; text-overflow: ellipsis; }
-#registerPage .ai-import-status > span i { width: 9px; height: 9px; flex: none; border: 2px solid var(--st-ink); border-radius: 50%; background: #C9D1DE; }
-#registerPage .ai-import-status > span.connected i { background: var(--st-green); }
-#registerPage .ai-import-status > span.connected { color: var(--st-ink); }
-#registerPage .ai-import-status #aiSettings { width: auto !important; min-width: 56px !important; min-height: 34px !important; margin: 0 !important; padding: 0 11px !important; flex: 0 0 auto !important; border: 2px solid var(--st-ink) !important; border-radius: var(--st-radius-pill) !important; background: #E8F3FF !important; color: var(--st-ink) !important; box-shadow: var(--st-shadow-small) !important; font-size: 10px !important; white-space: nowrap !important; }
 #registerPage .calendar-import-card .open-calendar-secondary { min-height: 40px !important; margin-top: 10px !important; border: 2px solid var(--st-ink) !important; border-radius: var(--st-radius-pill) !important; background: #fff !important; color: var(--st-sub) !important; box-shadow: var(--st-shadow-small) !important; }
 #registerPage .connection { display: inline-flex !important; min-height: 28px !important; padding: 0 10px !important; border: 2px solid var(--st-ink) !important; border-radius: var(--st-radius-pill) !important; background: var(--st-green) !important; color: var(--st-ink) !important; font-size: 12px !important; align-items: center !important; }
 #registerPage .connection.offline { background: #fff !important; }
@@ -530,22 +521,7 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
 #registerPage .focus-course-line input:focus { border-color: var(--st-ink) !important; outline: 3px solid var(--st-yellow) !important; box-shadow: none !important; }
 #registerPage .task-input-wrap small { padding-left: 12px !important; color: var(--st-sub) !important; font-size: 11px !important; }
 #registerPage .focus-course-line button { width: auto !important; min-height: 38px !important; padding: 0 10px !important; border: 2px solid var(--st-ink) !important; border-radius: var(--st-radius-pill) !important; background: #fff !important; box-shadow: var(--st-shadow-small) !important; color: #D93A3A !important; font-size: 12px !important; }
-#registerPage .focus-course-line .ai-suggest-line,
-#registerPage .focus-course-line .ai-compare-line { width: 88px !important; border-color: var(--st-ink) !important; background: #E8F3FF !important; color: var(--st-ink) !important; }
 #registerPage .add-focus-line { min-height: 42px !important; margin: 10px 0 0 37px !important; padding: 0 14px !important; border: 2px dashed var(--st-ink) !important; border-radius: var(--st-radius-pill) !important; background: #fff !important; color: var(--st-ink) !important; font-size: 14px !important; }
-#registerPage .ai-comparison { margin: 0 0 14px 46px !important; padding: 14px !important; border: 2px solid var(--st-ink) !important; border-radius: 14px !important; background: #E8F3FF !important; color: var(--st-ink) !important; }
-#registerPage .ai-comparison-columns { gap: 16px !important; }
-#registerPage .ai-comparison-columns > div + div { border-left: 2px solid var(--st-ink) !important; }
-#registerPage .ai-comparison b { color: var(--st-sub) !important; font-size: 12px !important; font-weight: 400 !important; }
-#registerPage .ai-comparison p { color: var(--st-ink) !important; font-size: 13px !important; }
-#registerPage .ai-comparison-actions button { min-height: 38px !important; padding: 0 12px !important; border: 2px solid var(--st-ink) !important; border-radius: var(--st-radius-pill) !important; background: #fff !important; box-shadow: var(--st-shadow-small) !important; color: var(--st-ink) !important; font-size: 12px !important; }
-#registerPage #compareAllOriginals { min-height: 32px !important; padding: 0 10px !important; border: 2px solid var(--st-ink) !important; border-radius: var(--st-radius-pill) !important; background: #E8F3FF !important; color: var(--st-ink) !important; box-shadow: var(--st-shadow-small) !important; font-size: 12px !important; white-space: nowrap !important; }
-#registerPage .ai-organized-chip { background: #8DD5AA !important; color: var(--st-ink) !important; }
-#registerPage .course-original-tools { display: flex; justify-content: flex-end; min-height: 0; margin: 0 0 8px; }
-#registerPage .course-original-tools:empty { display: none; }
-#registerPage .show-course-original { min-height: 34px !important; padding: 0 13px !important; border: 2px solid var(--st-ink) !important; border-radius: var(--st-radius-pill) !important; background: #E8F3FF !important; color: var(--st-ink) !important; box-shadow: var(--st-shadow-small) !important; font-size: 12px !important; }
-#registerPage .schedule-original-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 0 0 16px; padding: 14px; border: 2px solid var(--st-ink); border-radius: 16px; background: #E8F3FF; }
-#registerPage .schedule-original-comparison > div { min-width: 0; padding: 12px; border-radius: 12px; background: #fff; }
 #registerPage .schedule-original-comparison > div + div { border-left: 6px solid #8DD5AA; }
 #registerPage .schedule-original-comparison b { color: var(--st-sub); font-size: 12px; font-weight: 400; }
 #registerPage .schedule-original-comparison p { margin: 8px 0 0; color: var(--st-ink); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
@@ -674,48 +650,12 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
   .month-strip-grid { grid-template-columns: repeat(6, 1fr) !important; }
 }
 
-/* The editor toolbar gains AI controls dynamically. Stack its information and
-   actions before they can push the register button outside the panel. */
 @media (max-width: 1050px) {
   #registerPage .course-toolbar { align-items: stretch !important; flex-direction: column !important; gap: 14px !important; }
   #registerPage .course-toolbar > div:first-child { width: 100% !important; }
   #registerPage .course-toolbar-actions { width: 100% !important; justify-content: flex-end !important; }
   #registerPage .course-toolbar-actions button { flex: 0 0 auto !important; }
 }
-
-/* Gemini settings dialog */
-.ai-settings-dialog { width: min(680px, calc(100vw - 40px)) !important; max-height: calc(100vh - 48px) !important; padding: 0 !important; color: var(--st-ink) !important; overflow: auto !important; }
-.ai-settings-dialog::backdrop { background: rgba(27,40,69,.42) !important; backdrop-filter: none !important; }
-.ai-settings-card { padding: 22px !important; }
-.ai-settings-head span { color: var(--st-sub) !important; font-size: 12px !important; }
-.ai-settings-head h2 { color: var(--st-ink) !important; font-size: 24px !important; font-weight: 400 !important; }
-.ai-settings-head > button { width: 38px !important; height: 38px !important; padding: 0 !important; border: 2px solid var(--st-ink) !important; border-radius: 50% !important; background-color: var(--st-yellow) !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18'%3E%3Cpath d='M3.5 3.5l11 11M14.5 3.5l-11 11' fill='none' stroke='%231B2845' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") !important; background-position: center !important; background-repeat: no-repeat !important; background-size: 18px 18px !important; color: transparent !important; font-size: 0 !important; }
-.ai-settings-description { color: var(--st-sub) !important; font-size: 13px !important; }
-.ai-key-guide { border: 2px solid var(--st-ink) !important; border-radius: 14px !important; background: #E8F3FF !important; color: var(--st-ink) !important; font-size: 13px !important; }
-.ai-key-guide button { color: #315D9A !important; }
-.ai-key-cost { background: #FFF5C9 !important; color: var(--st-ink) !important; font-size: 12px !important; }
-.ai-key-field { color: var(--st-ink) !important; font-size: 13px !important; }
-.ai-key-field input { height: 48px !important; border: 2.5px solid var(--st-ink) !important; border-radius: 12px !important; background: #fff !important; color: var(--st-ink) !important; }
-.ai-key-field input:focus { outline: 3px solid var(--st-yellow) !important; box-shadow: none !important; }
-.ai-key-status { color: #19724F !important; font-size: 12px !important; }
-.ai-key-security { color: var(--st-sub) !important; font-size: 11px !important; }
-.ai-rules-section { margin-top: 18px; padding-top: 18px; border-top: 2px solid var(--st-grid); }
-.ai-base-rules { padding: 14px 16px; border: 2px solid var(--st-ink); border-radius: 14px; background: #E2F9EF; }
-.ai-base-rules > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.ai-base-rules strong { color: var(--st-ink); font-size: 14px; font-weight: 400; }
-.ai-base-rules > div span { padding: 5px 9px; border: 2px solid var(--st-ink); border-radius: var(--st-radius-pill); background: var(--st-green); color: var(--st-ink); font-size: 11px; }
-.ai-base-rules ul { display: grid; margin: 12px 0 0; padding-left: 20px; grid-template-columns: 1fr 1fr; gap: 7px 18px; color: var(--st-sub); font-size: 12px; }
-.ai-custom-rules { display: grid; margin-top: 16px; gap: 8px; }
-.ai-custom-rules > span { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.ai-custom-rules strong { color: var(--st-ink); font-size: 14px; font-weight: 400; }
-.ai-custom-rules small { color: var(--st-sub); font-size: 11px; }
-.ai-custom-rules textarea { min-height: 132px; padding: 13px 14px; border: 2.5px solid var(--st-ink); border-radius: 14px; background: #fff; color: var(--st-ink); font: 400 13px/1.55 MyHolyPolyNanum, 'Malgun Gothic', sans-serif; resize: vertical; }
-.ai-custom-rules textarea:focus { outline: 3px solid var(--st-yellow); outline-offset: 2px; }
-.ai-rules-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
-.ai-rules-foot span { color: var(--st-sub); font-size: 11px; }
-.ai-rules-foot button { min-height: 32px; padding: 0 10px; border: 2px solid var(--st-ink); border-radius: var(--st-radius-pill); background: #fff; color: var(--st-sub); font-size: 11px; }
-.ai-settings-actions .danger { color: #D93A3A !important; }
-.ai-settings-actions .primary { background: var(--st-yellow) !important; color: var(--st-ink) !important; }
 
 /* Keep the calendar control on the same visual line as the schedule filters. */
 .global-filterbar { min-height: 48px !important; flex-wrap: nowrap !important; align-items: center !important; }
@@ -819,12 +759,5 @@ select:focus-visible { outline: 3px solid var(--st-yellow) !important; outline-o
   #registerPage .course-accordion-summary { display: grid !important; gap: 2px !important; }
   #registerPage .course-accordion-chip { display: none !important; }
   #registerPage .focus-course-line { grid-template-columns: 30px minmax(0, 1fr) 46px !important; gap: 6px !important; }
-  #registerPage .focus-course-line .ai-suggest-line,
-  #registerPage .focus-course-line .ai-compare-line { width: 78px !important; padding: 0 6px !important; }
-  #registerPage .ai-comparison { margin-left: 0 !important; }
-  #registerPage .ai-comparison-columns { grid-template-columns: 1fr !important; }
-  #registerPage .ai-comparison-columns > div + div { padding: 12px 0 0 !important; border-top: 2px solid var(--st-ink) !important; border-left: 0 !important; }
-  #registerPage .schedule-original-comparison { grid-template-columns: 1fr; }
-  #registerPage .schedule-original-comparison > div + div { border-top: 6px solid #8DD5AA; border-left: 0; }
   .notes-list { grid-template-columns: 1fr !important; }
 }

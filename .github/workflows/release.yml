@@ -48,6 +48,9 @@ jobs:
         run: |
           $installer = Get-ChildItem "release-msix\myholypoly-windows-x64-*.appx" | Select-Object -First 1 -ExpandProperty FullName
           if (-not $installer) { throw "APPX installer was not created." }
-          gh release create "${{ github.ref_name }}" $installer "distribution\magune-lab.cer" `
+          $checksumFile = "release-msix\SHA256SUMS.txt"
+          $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $(Split-Path $installer -Leaf)" | Set-Content $checksumFile -Encoding ascii
+          gh release create "${{ github.ref_name }}" $installer "distribution\magune-lab.cer" $checksumFile `
             --title "myholypoly ${{ github.ref_name }}" `
             --notes "Windows용 e-POLY 숙제 플래너 릴리즈입니다. 최신 기능 개선과 오류 수정을 포함합니다."

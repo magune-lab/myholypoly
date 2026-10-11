@@ -1,9 +1,12 @@
 # myholypoly 설치 안내
 
+myholypoly는 Korea POLY School 또는 e-POLY와 제휴하거나 공식적으로 제작·보증받은 제품이 아닌 개인 제작 보조 앱입니다.
+
 릴리스에서 다음 두 파일을 같은 폴더에 다운로드하세요.
 
 - `magune-lab.cer`: 최초 설치용 공개 인증서
 - `myholypoly-windows-x64-버전.appx`: 앱 설치 파일
+- `SHA256SUMS.txt`: 설치 파일이 변조되지 않았는지 확인하는 체크섬
 
 ## 처음 설치하는 경우
 

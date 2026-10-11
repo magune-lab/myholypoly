@@ -1,6 +1,6 @@
 /* Structural rules kept separate so the schedule views do not regress. */
 :root { color-scheme: dark; }
-input, button { font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; }
+input, button { font-family: Jua, 'Malgun Gothic', sans-serif; }
 
 .course-form-head label {
   display: grid;
@@ -91,7 +91,7 @@ input:focus-visible {
 .gantt-filter-controls .scope-tabs { margin: 0; }
 .month-label { color: #8e939c; font-size: 10px; font-weight: 700; }
 .month-picker { position: relative; display: inline-flex; align-items: center; gap: 4px; }
-.month-picker button { font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; }
+.month-picker button { font-family: Jua, 'Malgun Gothic', sans-serif; }
 .month-arrow { width: 30px; height: 30px; padding: 0; border: 1px solid #343840; border-radius: 7px; background: #1c1e23; color: #949aa5; font-size: 18px; line-height: 1; }
 .month-arrow:hover { border-color: #4b5260; background: #24272e; color: #eef0f4; }
 .month-current { display: inline-flex; align-items: center; justify-content: space-between; gap: 14px; min-width: 122px; height: 30px; padding: 0 10px; border: 1px solid #3a3f49; border-radius: 7px; background: #1c1e23; color: #e1e4e9; font-size: 11px; font-weight: 700; }
@@ -113,7 +113,7 @@ input:focus-visible {
 .custom-date-input { cursor: default; padding-right: 27px !important; }
 .plan-date, .focus-course-head label { position: relative; }
 .plan-date::after, .focus-course-head label::after { content: '▦'; position: absolute; right: 9px; top: 50%; color: #7f8999; font-size: 12px; line-height: 1; pointer-events: none; transform: translateY(-50%); }
-.date-picker-popover { position: fixed; z-index: 100; width: 276px; padding: 13px; border: 1px solid #3b404a; border-radius: 12px; background: #1c1e24; box-shadow: 0 20px 55px rgba(0,0,0,.5); font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; }
+.date-picker-popover { position: fixed; z-index: 100; width: 276px; padding: 13px; border: 1px solid #3b404a; border-radius: 12px; background: #1c1e24; box-shadow: 0 20px 55px rgba(0,0,0,.5); font-family: Jua, 'Malgun Gothic', sans-serif; }
 .date-picker-popover[hidden] { display: none; }
 .date-picker-head { display: grid; grid-template-columns: 32px 1fr 32px; align-items: center; margin-bottom: 10px; }
 .date-picker-head strong { color: #e7e9ed; font-size: 12px; text-align: center; }
@@ -123,13 +123,13 @@ input:focus-visible {
 .date-picker-week { margin-bottom: 4px; }
 .date-picker-week span { display: grid; height: 24px; place-items: center; color: #737b88; font-size: 9px; font-weight: 700; }
 .date-picker-week span:first-child { color: #a97979; }
-.date-picker-days button { height: 30px; padding: 0; border: 1px solid transparent; border-radius: 7px; background: transparent; color: #bec3cc; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 10px; }
+.date-picker-days button { height: 30px; padding: 0; border: 1px solid transparent; border-radius: 7px; background: transparent; color: #bec3cc; font-family: Jua, 'Malgun Gothic', sans-serif; font-size: 10px; }
 .date-picker-days button:hover { background: #292d35; color: #fff; }
 .date-picker-days button.outside { color: #555c68; }
 .date-picker-days button.today { border-color: #505a6d; }
 .date-picker-days button.selected { border-color: #6f7b94; background: #394255; color: #f2f5fb; font-weight: 700; }
 .date-picker-foot { display: flex; justify-content: space-between; margin-top: 9px; padding-top: 9px; border-top: 1px solid #30343c; }
-.date-picker-foot button { min-height: 28px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: #9ca8be; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 9px; font-weight: 700; }
+.date-picker-foot button { min-height: 28px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: #9ca8be; font-family: Jua, 'Malgun Gothic', sans-serif; font-size: 9px; font-weight: 700; }
 .date-picker-foot button:hover { background: #292c34; color: #fff; }
 .date-picker-popover button:focus-visible { outline: 0; box-shadow: 0 0 0 2px #1c1e24, 0 0 0 4px rgba(174,185,210,.4); }
 
@@ -323,7 +323,7 @@ input:focus-visible {
 
 /* Registration C: focused course editor. */
 #registerPage { padding-top: 26px; }
-.focus-register { overflow: hidden; border: 1px solid #30343c; border-radius: 14px; background: #111318; box-shadow: 0 22px 70px rgba(0,0,0,.22); font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; }
+.focus-register { overflow: hidden; border: 1px solid #30343c; border-radius: 14px; background: #111318; box-shadow: 0 22px 70px rgba(0,0,0,.22); font-family: Jua, 'Malgun Gothic', sans-serif; }
 .register-commandbar { display: flex; align-items: center; gap: 8px; min-height: 62px; padding: 0 18px; border-bottom: 1px solid #2c3038; background: #181a20; }
 .register-commandbar button { min-height: 34px; padding: 0 12px; border: 1px solid #343944; border-radius: 8px; background: #20232a; color: #d7dae0; font-size: 11px; font-weight: 650; }
 .command-group { display: flex; align-items: center; gap: 6px; }
@@ -339,7 +339,7 @@ input:focus-visible {
 .plan-date { display: flex; align-items: center; gap: 7px; color: #858d9c; font-size: 10px; font-weight: 650; }
 .plan-date input { width: 112px; height: 32px; padding: 0 8px; border: 1px solid #343944; border-radius: 7px; background: #14161b; color: #d7dbe3; font-size: 11px; color-scheme: dark; }
 .plan-date input::-webkit-datetime-edit,
-.focus-course-head label input::-webkit-datetime-edit { font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-weight: 700; }
+.focus-course-head label input::-webkit-datetime-edit { font-family: Jua, 'Malgun Gothic', sans-serif; font-weight: 700; }
 .sr-copy { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
 .focus-register-body { display: grid; grid-template-columns: 255px minmax(0,1fr); min-height: 500px; }
 .course-rail { padding: 16px; border-right: 1px solid #2c3038; background: #17191f; }
@@ -354,7 +354,7 @@ input:focus-visible {
 .course-nav-item:hover, .course-nav-item.active { background: transparent; }
 .course-nav-item strong { display: block; overflow: hidden; font-size: 12px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .course-nav-item span { display: block; margin-top: 5px; color: #858d9b; font-size: 9px; }
-.course-nav-delete { align-self: center; min-width: 0; width: 36px; height: 30px; padding: 0; border: 0; border-radius: 7px; background: transparent; color: #8f7379; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 9px; font-weight: 700; }
+.course-nav-delete { align-self: center; min-width: 0; width: 36px; height: 30px; padding: 0; border: 0; border-radius: 7px; background: transparent; color: #8f7379; font-family: Jua, 'Malgun Gothic', sans-serif; font-size: 9px; font-weight: 700; }
 .course-nav-delete:hover { background: #302327; color: #e2a09c; }
 .course-workspace { min-width: 0; padding: 25px 30px 20px; }
 .workspace-kicker { display: flex; justify-content: space-between; margin-bottom: 12px; color: #858d9b; font-size: 10px; font-weight: 650; }
@@ -364,7 +364,7 @@ input:focus-visible {
 .focus-course-head > input { min-width: 0; padding: 0 12px; color: #eef0f4; font-size: 16px; font-weight: 650; }
 .focus-course-head label { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px; padding-left: 10px; color: #858d9b; font-size: 9px; font-weight: 650; }
 .focus-course-head label input { width: 105px; height: 38px; padding: 0 7px; border: 0; background: transparent; color: #d9dde5; font-size: 10px; color-scheme: dark; }
-.focus-course-head > button { width: 70px; height: 32px; padding: 0; border: 1px solid #49363b; border-radius: 7px; background: #211a1d; color: #bd8584; font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 9px; font-weight: 700; }
+.focus-course-head > button { width: 70px; height: 32px; padding: 0; border: 1px solid #49363b; border-radius: 7px; background: #211a1d; color: #bd8584; font-family: Jua, 'Malgun Gothic', sans-serif; font-size: 9px; font-weight: 700; }
 .focus-course-head > button:hover { background: #2a2023; color: #d18e8b; }
 .focus-course-lines { margin-top: 20px; padding: 7px 15px; border: 1px solid #30343c; border-radius: 12px; background: #181a20; }
 .focus-course-line { display: grid; grid-template-columns: 26px minmax(0,1fr) 42px; align-items: center; min-height: 49px; border-bottom: 1px solid #2d3139; }
@@ -400,7 +400,7 @@ input:focus-visible {
 .focus-course-lines { border-radius: var(--reg-radius); }
 .focus-course-line { transition: background .12s ease; }
 .focus-course-line:focus-within { background: #1d2027; }
-.focus-course-line input { font-family: MyHolyPolyNanum, 'Malgun Gothic', sans-serif; font-size: 12px; letter-spacing: -.12px; }
+.focus-course-line input { font-family: Jua, 'Malgun Gothic', sans-serif; font-size: 12px; letter-spacing: -.12px; }
 .focus-course-line input:focus-visible { box-shadow: none; }
 .register-commandbar button,
 .workspace-footer > .primary,
