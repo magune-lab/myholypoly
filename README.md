@@ -52,7 +52,7 @@ pnpm run package:msix
 ```
 
 - 지원 운영체제: Windows
-- 현재 버전: `0.1.11`
+- 현재 버전: `0.1.12`
 - 라이선스: [MIT](LICENSE)
 - 제3자 구성요소: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)
 - 저장소: [github.com/magune-lab/myholypoly](https://github.com/magune-lab/myholypoly)
