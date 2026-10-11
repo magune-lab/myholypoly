@@ -447,7 +447,18 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
 #registerPage .import-card-block { padding: 20px !important; }
 #registerPage .import-card-title { margin: 0 0 14px !important; color: var(--st-sub) !important; font-size: 14px !important; font-weight: 400 !important; }
 #registerPage .epoly-row { margin-bottom: 16px !important; }
-#registerPage .epoly-icon { display: none !important; }
+#registerPage .epoly-icon { display: grid !important; width: 46px !important; height: 46px !important; border: 2.5px solid var(--st-ink) !important; border-radius: 14px !important; background: var(--st-yellow) !important; color: var(--st-ink) !important; box-shadow: 3px 3px 0 var(--st-ink) !important; place-items: center !important; }
+#registerPage .epoly-icon svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+#registerPage .epoly-icon .source-accent { stroke: #d84b75; }
+#registerPage [data-import-source="app"] .source-symbol-web,
+#registerPage [data-import-source="web"] .source-symbol-app { display: none; }
+#registerPage [data-import-source="web"] .epoly-icon { background: var(--st-pink) !important; }
+#registerPage .import-source-switch { display: grid; margin: 0 0 18px; grid-template-columns: 1fr 1fr; gap: 9px; }
+#registerPage .import-source-switch .import-source-option { display: flex !important; width: 100% !important; min-height: 54px !important; margin: 0 !important; padding: 7px 10px !important; border: 2.5px solid var(--st-ink) !important; border-radius: 15px !important; background: #fff !important; color: var(--st-sub) !important; box-shadow: none !important; align-items: center; justify-content: flex-start; gap: 8px; }
+#registerPage .import-source-switch .import-source-option.active { background: var(--st-yellow) !important; color: var(--st-ink) !important; box-shadow: 3px 3px 0 var(--st-ink) !important; transform: translate(-1px, -1px); }
+#registerPage .import-source-option-icon { display: grid; width: 30px; height: 30px; border: 2px solid currentColor; border-radius: 9px; background: #fff; flex: none; place-items: center; }
+#registerPage .import-source-option-icon svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#registerPage .import-source-option-icon .source-accent { stroke: #d84b75; }
 #registerPage .epoly-copy strong { color: var(--st-ink) !important; font-size: 16px !important; font-weight: 400 !important; }
 #registerPage .epoly-copy span { margin-top: 4px !important; color: var(--st-sub) !important; font-size: 12px !important; }
 #registerPage .epoly-import-card .app-launch { background: var(--st-pink) !important; }

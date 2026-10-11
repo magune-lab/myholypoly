@@ -39,6 +39,8 @@ let pageHistory = ['overview'];
 let pageHistoryIndex = 0;
 const scopeStorageKey = 'myholypoly.scheduleScope';
 const hideCompletedStorageKey = 'myholypoly.hideCompleted';
+const importSourceStorageKey = 'myholypoly.importSource';
+let importSource = localStorage.getItem(importSourceStorageKey) === 'web' ? 'web' : 'app';
 const validScopes = ['urgent', 'today', 'week', 'all'];
 const storedScope = localStorage.getItem(scopeStorageKey);
 let overviewScope = validScopes.includes(storedScope) ? storedScope : 'all';
@@ -279,12 +281,27 @@ async function refreshStatus() {
   if (statusRefreshPromise) return statusRefreshPromise;
   statusRefreshPromise = (async () => {
     if (!bridge?.epoly) throw new Error('앱 연결을 시작하지 못했습니다. myholypoly를 다시 실행하세요.');
+    if (importSource === 'web') {
+      const status = await bridge.polyWeb.status();
+      $('#connection').className = `connection ${status.loggedIn ? 'online' : 'offline'}`;
+      $('#connection').textContent = status.loggedIn ? '연결됨' : status.opened ? '로그인 대기' : '연결 대기';
+      $('#connectionCopy').textContent = status.loggedIn ? (status.homeworkOpen ? 'POLY 웹 Homework 화면이 열려 있습니다.' : 'POLY 웹에 로그인되어 있습니다.') : 'POLY 웹 로그인 버튼을 눌러 로그인해 주세요.';
+      $('#epolyInstallHelp').hidden = true;
+      $('#launchEpoly').disabled = false;
+      $('#getToday').disabled = !status.loggedIn;
+      $('#openCalendar').disabled = !status.loggedIn;
+      const currentStep = status.homeworkOpen ? 3 : status.loggedIn ? 2 : 1;
+      setRegisterStep(currentStep, { allowBack: true });
+      return status;
+    }
     const status = await bridge.epoly.status();
     $('#connection').className = `connection ${status.connected ? 'online' : 'offline'}`;
     $('#connection').textContent = status.connected ? '연결됨' : status.installed ? '연결 대기' : '미설치';
     $('#connectionCopy').textContent = status.connected ? (status.calendarOpen ? 'e-POLY 캘린더가 열려 있습니다.' : 'e-POLY가 열려 있습니다.') : status.installed ? '연동 모드로 e-POLY를 열어 주세요.' : 'PC 설치 가이드를 보고 e-POLY를 설치한 후 다시 시도해 주세요.';
-    $('#epolyInstallHelp').hidden = status.installed;
-    $('#launchEpoly').disabled = !status.installed;
+    if (importSource === 'app') {
+      $('#epolyInstallHelp').hidden = status.installed;
+      $('#launchEpoly').disabled = !status.installed;
+    }
     ['#getToday','#openCalendar'].forEach(selector => $(selector).disabled = !status.connected);
     const currentStep = status.calendarOpen ? 3 : status.connected ? 2 : 1;
     const message = $('#importMessage');
@@ -295,6 +312,30 @@ async function refreshStatus() {
   })();
   try { return await statusRefreshPromise; }
   finally { statusRefreshPromise = null; }
+}
+
+function renderImportSource() {
+  const web = importSource === 'web';
+  $('#importSourceCard').dataset.importSource = importSource;
+  $('#importSourceApp').classList.toggle('active', !web);
+  $('#importSourceApp').setAttribute('aria-pressed', String(!web));
+  $('#importSourceWeb').classList.toggle('active', web);
+  $('#importSourceWeb').setAttribute('aria-pressed', String(web));
+  $('#importStartStepLabel').textContent = web ? 'POLY 웹 로그인' : 'e-POLY 실행';
+  $('#importSourceHeading').textContent = web ? 'POLY 웹에서 가져오기' : 'e-POLY 앱에서 가져오기';
+  $('#importSourceDescription').textContent = web ? '로그인 후 웹 숙제를 불러와요' : '앱 캘린더의 숙제를 불러와요';
+  $('#launchEpoly').textContent = web ? 'POLY 웹 로그인' : 'e-POLY 실행';
+  $('#launchEpoly').disabled = false;
+  if (web) $('#epolyInstallHelp').hidden = true;
+  else refreshStatus().catch(error => setStepMessage(1, error.message, 'error'));
+}
+
+function selectImportSource(nextSource) {
+  importSource = nextSource;
+  localStorage.setItem(importSourceStorageKey, importSource);
+  setStepMessage(1, '');
+  setRegisterStep(1, { allowBack: true });
+  renderImportSource();
 }
 
 let progressScope = overviewScope;
@@ -335,10 +376,37 @@ $('#datePickerToday').onclick = event => { event.stopPropagation(); if (!activeD
 $('#datePickerPopover').onclick = event => event.stopPropagation();
 document.addEventListener('click', closeDatePicker);
 $('#addTask').onclick = () => { if (courses.length >= maxCourses) { setMessage(`과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, true); return setStepMessage(4, `과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, 'error'); } courses.push({ title: '', detail: '', dueDate: '', startDate: $('#planDate').value }); activeCourseIndex = courses.length - 1; renderCourses(); requestAnimationFrame(() => $('#courseEditor .stacked-course:last-child')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })); };
-$('#launchEpoly').onclick = async () => { setStepMessage(1, 'e-POLY를 실행하고 있습니다.'); try { await bridge.epoly.launch(); setStepMessage(1, 'e-POLY를 실행했습니다.', 'success'); setRegisterStep(2); setMessage('e-POLY를 여는 중입니다.'); setTimeout(() => refreshStatus().catch(error => setStepMessage(1, error.message, 'error')), 1500); } catch (error) { setMessage(error.message, true); setStepMessage(1, error.message, 'error'); } };
+$('#importSourceApp').onclick = () => selectImportSource('app');
+$('#importSourceWeb').onclick = () => selectImportSource('web');
+renderImportSource();
+$('#launchEpoly').onclick = async () => {
+  if (importSource === 'web') {
+    setStepMessage(1, 'POLY 웹 로그인 화면을 열고 있습니다.');
+    try {
+      await bridge.polyWeb.open();
+      setStepMessage(1, '로그인 후 Homework 화면을 열어 주세요.', 'success');
+      setMessage('POLY 웹 로그인 창을 열었습니다.');
+    } catch (error) {
+      setMessage(error.message, true);
+      setStepMessage(1, error.message, 'error');
+    }
+    return;
+  }
+  setStepMessage(1, 'e-POLY를 실행하고 있습니다.');
+  try {
+    await bridge.epoly.launch();
+    setStepMessage(1, 'e-POLY를 실행했습니다.', 'success');
+    setRegisterStep(2);
+    setMessage('e-POLY를 여는 중입니다.');
+    setTimeout(() => refreshStatus().catch(error => setStepMessage(1, error.message, 'error')), 1500);
+  } catch (error) {
+    setMessage(error.message, true);
+    setStepMessage(1, error.message, 'error');
+  }
+};
 $('#openEpolyInstallGuide').onclick = () => bridge.epoly.openInstallGuide();
-$('#openCalendar').onclick = async () => { setStepMessage(2, '캘린더를 열고 있습니다.'); try { const result = await bridge.epoly.openCalendar(); if (!result.opened) { setMessage(result.message, true); return setStepMessage(2, result.message, 'error'); } setStepMessage(2, '캘린더를 열었습니다.', 'success'); setRegisterStep(3); setMessage('e-POLY 캘린더를 여는 중입니다.'); setTimeout(() => refreshStatus().catch(error => setStepMessage(2, error.message, 'error')), 1200); } catch (error) { setMessage(error.message, true); setStepMessage(2, error.message, 'error'); } };
-$('#getToday').onclick = async () => { const selectedDate = $('#planDate').value; const button = $('#getToday'); setEditingMode(); setRegisterStep(3, { allowBack: true }); setStepMessage(3, `${selectedDate} 일정을 확인하고 있습니다.`); button.disabled = true; try { const isToday = selectedDate === today; const result = isToday ? await bridge.epoly.todayHomework() : await bridge.epoly.dateHomework(selectedDate); source = isToday ? 'epoly-today' : 'epoly-date'; $('#sourceLabel').textContent = isToday ? 'e-POLY 오늘' : `e-POLY ${selectedDate}`; if (!result.tasks.length) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(3, { allowBack: true }); setMessage(''); return setStepMessage(3, `${selectedDate}에 등록된 숙제가 없습니다.`, 'empty'); } setCourses(result.tasks); setRegisterStep(4); setMessage(`${selectedDate} 숙제를 가져왔습니다.`); setStepMessage(4, `${result.tasks.length}개 과목을 가져왔습니다. 내용을 확인해 주세요.`, 'success'); } catch (error) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(3, { allowBack: true }); setMessage(error.message, true); setStepMessage(3, error.message, 'error'); } finally { button.disabled = false; } };
+$('#openCalendar').onclick = async () => { setStepMessage(2, '캘린더를 열고 있습니다.'); try { const result = importSource === 'web' ? await bridge.polyWeb.openHomework() : await bridge.epoly.openCalendar(); if (!result.opened) { setMessage(result.message, true); return setStepMessage(2, result.message, 'error'); } setStepMessage(2, '캘린더를 열었습니다.', 'success'); setRegisterStep(3); setMessage(importSource === 'web' ? 'POLY 웹 Homework를 열었습니다.' : 'e-POLY 캘린더를 여는 중입니다.'); setTimeout(() => refreshStatus().catch(error => setStepMessage(2, error.message, 'error')), 1200); } catch (error) { setMessage(error.message, true); setStepMessage(2, error.message, 'error'); } };
+$('#getToday').onclick = async () => { const selectedDate = $('#planDate').value; const button = $('#getToday'); setEditingMode(); setRegisterStep(3, { allowBack: true }); setStepMessage(3, `${selectedDate} 일정을 확인하고 있습니다.`); button.disabled = true; try { const isWeb = importSource === 'web'; const isToday = selectedDate === today; const result = isWeb ? await bridge.polyWeb.dateHomework(selectedDate) : isToday ? await bridge.epoly.todayHomework() : await bridge.epoly.dateHomework(selectedDate); source = isWeb ? 'poly-web' : isToday ? 'epoly-today' : 'epoly-date'; $('#sourceLabel').textContent = isWeb ? `POLY 웹 ${selectedDate}` : isToday ? 'e-POLY 오늘' : `e-POLY ${selectedDate}`; if (!result.tasks.length) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(3, { allowBack: true }); setMessage(''); return setStepMessage(3, `${selectedDate}에 등록된 숙제가 없습니다.`, 'empty'); } setCourses(result.tasks); setRegisterStep(4); setMessage(`${selectedDate} 숙제를 가져왔습니다.`); setStepMessage(4, `${result.tasks.length}개 과목을 가져왔습니다. 내용을 확인해 주세요.`, 'success'); } catch (error) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(3, { allowBack: true }); setMessage(error.message, true); setStepMessage(3, error.message, 'error'); } finally { button.disabled = false; } };
 function updateHistoryControls() {
   if ($('#historyBack')) $('#historyBack').disabled = pageHistoryIndex <= 0;
   if ($('#historyForward')) $('#historyForward').disabled = pageHistoryIndex >= pageHistory.length - 1;

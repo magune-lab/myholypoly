@@ -18,6 +18,12 @@ contextBridge.exposeInMainWorld('myholypoly', {
     openCalendar: () => ipcRenderer.invoke('epoly:open-calendar'),
     openInstallGuide: () => ipcRenderer.invoke('epoly:open-install-guide')
   },
+  polyWeb: {
+    open: () => ipcRenderer.invoke('poly-web:open'),
+    status: () => ipcRenderer.invoke('poly-web:status'),
+    openHomework: () => ipcRenderer.invoke('poly-web:open-homework'),
+    dateHomework: date => ipcRenderer.invoke('poly-web:date-homework', date)
+  },
   plan: {
     read: () => ipcRenderer.invoke('plan:read'),
     register: draft => ipcRenderer.invoke('plan:register', draft),
