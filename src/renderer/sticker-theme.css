@@ -374,7 +374,6 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
   .spot-wrap.spotlight::after { animation: spot-fade 1.2s ease both; --spot-a: 0deg; }
 }
 .action-course:hover,
-.action-course:focus-within,
 .action-course.is-target { border-color: var(--st-ink) !important; background: #fff !important; box-shadow: 6px 6px 0 var(--st-ink) !important; transform: translate(-1px, -1px) !important; }
 .action-course.soon,
 .action-course.critical { border-color: var(--st-ink) !important; box-shadow: var(--st-shadow) !important; }
@@ -403,8 +402,10 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
 .schedule-menu-separator { display: block !important; height: 2px !important; margin: 3px 8px !important; background: var(--st-grid) !important; }
 .action-course-tasks { padding: 6px 16px 8px !important; }
 .action-course-line { display: flex !important; min-height: 44px !important; padding: 5px 0 !important; border: 0 !important; background: transparent !important; color: var(--st-ink) !important; font-size: 14px !important; line-height: 1.4 !important; align-items: center !important; gap: 10px !important; }
+.action-course-line:focus-within { box-shadow: none !important; }
 .action-course-line input { position: absolute !important; opacity: 0 !important; }
 .action-course-line .task-box { display: inline-grid !important; width: 24px !important; height: 24px !important; flex: 0 0 24px !important; border: 2.5px solid var(--st-ink) !important; border-radius: 8px !important; background: #fff !important; place-items: center !important; }
+.action-course-line input:focus-visible + .task-box { outline: 3px solid var(--st-yellow) !important; outline-offset: 2px !important; }
 .action-course-line input:checked + .task-box { background: var(--course-bg) !important; }
 .action-course-line input:checked + .task-box::after { color: var(--st-ink) !important; font-size: 16px !important; content: '✓' !important; }
 .action-course-line.done > span:last-child { color: var(--st-sub) !important; text-decoration: line-through !important; }
@@ -540,8 +541,15 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
 /* Notes */
 .notes-panel { margin: 0 !important; padding: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; }
 .notes-list { display: grid !important; grid-template-columns: repeat(3, minmax(240px, 300px)) !important; gap: 22px !important; align-items: start !important; }
+.notes-add-control { position: relative; display: flex; align-items: center; gap: 12px; }
+.note-count { min-width: 54px; color: var(--st-sub); font-size: 14px; text-align: right; }
+.note-limit-message { position: absolute; right: 0; bottom: calc(100% + 10px); z-index: 20; width: max-content; max-width: 260px; padding: 9px 13px; border: 2px solid var(--st-ink); border-radius: 12px; background: #fff; box-shadow: var(--st-shadow-small); color: var(--st-ink); font-size: 13px; white-space: nowrap; }
+.note-limit-message[hidden] { display: none !important; }
 .notes-add-button { display: grid !important; width: 46px !important; height: 46px !important; min-height: 46px !important; margin: 0 5px 4px 0 !important; padding: 0 0 2px !important; border: var(--st-border) !important; border-radius: 50% !important; background: var(--st-yellow) !important; box-shadow: var(--st-shadow) !important; color: var(--st-ink) !important; font-size: 27px !important; line-height: 1 !important; place-items: center !important; }
 .notes-add-button:active { box-shadow: 1px 1px 0 var(--st-ink) !important; transform: translate(3px, 3px) !important; }
+.notes-add-button:disabled { background: #E4E8EE !important; box-shadow: 2px 2px 0 var(--st-ink) !important; color: #8B94A8 !important; cursor: not-allowed !important; opacity: 1 !important; transform: none !important; }
+.notes-add-control[data-limit-reached="true"]:hover::after { position: absolute; right: 0; bottom: calc(100% + 10px); z-index: 19; width: max-content; padding: 9px 13px; border: 2px solid var(--st-ink); border-radius: 12px; background: #fff; box-shadow: var(--st-shadow-small); color: var(--st-ink); content: '메모는 최대 9개까지 만들 수 있어요'; font-size: 13px; white-space: nowrap; }
+.notes-add-control[data-limit-reached="true"]:has(.note-limit-message:not([hidden])):hover::after { display: none; }
 .note-add-tile,
 .notes-empty { width: 100% !important; min-height: 230px !important; border: 3px dashed var(--st-ink) !important; border-radius: var(--st-radius-card) !important; background: transparent !important; color: var(--st-ink) !important; box-shadow: none !important; }
 .note-add-tile { display: grid !important; place-content: center !important; justify-items: center !important; gap: 12px !important; }
@@ -560,7 +568,7 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
 .note-card:nth-of-type(4n+3) { background: #BFE4FF !important; }
 .note-card:nth-of-type(4n+4) { background: #BDF2D8 !important; }
 .note-card-head { display: grid !important; min-width: 0 !important; padding: 0 !important; grid-template-columns: minmax(0, 1fr) auto !important; align-items: center !important; gap: 10px !important; }
-.note-card-head input { width: 100% !important; min-width: 0 !important; height: 38px !important; padding: 0 !important; border: 0 !important; background: transparent !important; color: var(--st-ink) !important; font-size: 18px !important; }
+.note-card-head input { width: 100% !important; min-width: 0 !important; height: 38px !important; padding: 0 8px !important; border: 0 !important; background: transparent !important; color: var(--st-ink) !important; font-size: 18px !important; }
 .note-card-head button { width: auto !important; min-width: 58px !important; min-height: 36px !important; padding: 0 12px !important; border: 2px solid var(--st-ink) !important; border-radius: var(--st-radius-pill) !important; background: #fff !important; box-shadow: var(--st-shadow-small) !important; color: #D93A3A !important; font-size: 12px !important; white-space: nowrap !important; }
 .note-card textarea { display: block !important; width: 100% !important; height: 100% !important; min-height: 0 !important; margin: 0 !important; padding: 12px !important; resize: none !important; border: 2.5px solid var(--st-ink) !important; border-radius: 12px !important; background: #fff !important; color: var(--st-ink) !important; font-size: 14px !important; line-height: 1.5 !important; }
 .note-card textarea:focus,
@@ -709,6 +717,24 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible { outline: 3px solid var(--st-yellow) !important; outline-offset: 2px !important; }
+
+/* Schedule delete confirmation — option 1 icon card */
+.delete-dialog[hidden] { display: none !important; }
+.delete-dialog { position: fixed; z-index: 10000; inset: 0; display: flex; padding: 64px 24px 24px; background: rgba(27, 40, 69, .5); backdrop-filter: blur(2px); align-items: center; justify-content: center; }
+.delete-dialog-card { position: relative; width: min(420px, calc(100vw - 48px)); padding: 52px 28px 26px; border: 3px solid var(--st-ink); border-radius: 28px; background: #fff; box-shadow: 6px 6px 0 var(--st-ink); color: var(--st-ink); text-align: center; }
+.delete-dialog-icon { position: absolute; top: -40px; left: 50%; display: flex; width: 80px; height: 80px; margin-left: -40px; border: 3px solid var(--st-ink); border-radius: 50%; background: #FF8A8A; box-shadow: 3px 3px 0 var(--st-ink); align-items: center; justify-content: center; }
+.delete-dialog-icon svg { width: 40px; height: 40px; fill: none; stroke: var(--st-ink); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.delete-dialog-icon .delete-dialog-bin { fill: #fff; }
+.delete-dialog-card h2 { margin: 0 0 12px; font-size: 26px; font-weight: 400; }
+.delete-dialog-schedule { display: inline-flex; max-width: 100%; padding: 4px 14px; border: 2.5px solid var(--st-ink); border-radius: 999px; background: #fff; font-size: 15px; align-items: center; gap: 8px; }
+.delete-dialog-schedule > span { width: 12px; height: 12px; border: 2.5px solid var(--st-ink); border-radius: 50%; background: var(--st-yellow); flex: none; }
+.delete-dialog-schedule strong { overflow: hidden; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+.delete-dialog-card p { margin: 14px 0 22px; color: var(--st-sub); font-size: 14px; }
+.delete-dialog-actions { display: flex; gap: 14px; }
+.delete-dialog-actions button { min-width: 0; height: 52px; padding: 0 16px; border: 3px solid var(--st-ink); border-radius: 999px; background: #fff; box-shadow: 3px 3px 0 var(--st-ink); color: var(--st-ink); font-size: 18px; flex: 1; }
+.delete-dialog-actions button:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--st-ink); }
+.delete-dialog-actions button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--st-ink); }
+#deleteScheduleConfirm { background: #FF8A8A; }
 * { scrollbar-color: var(--st-blue) transparent !important; }
 ::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--st-blue) !important; }
 

@@ -63,7 +63,7 @@
         </div>
       </section>
       <section id="notesPage" class="app-page notes-page" aria-label="메모장" hidden>
-        <div class="page-title notes-page-title"><div><p class="eyebrow">필요한 내용을 간단히 기록하세요</p><h1>메모장</h1></div><button id="addNote" class="notes-add-button" type="button" aria-label="새 메모 추가">＋</button></div>
+        <div class="page-title notes-page-title"><div><p class="eyebrow">필요한 내용을 간단히 기록하세요</p><h1>메모장</h1></div><div class="notes-add-control" data-limit-reached="false"><span id="noteLimitMessage" class="note-limit-message" role="status" aria-live="polite" hidden>메모는 최대 9개까지 만들 수 있어요</span><span id="noteCount" class="note-count" aria-label="메모 개수">0 / 9</span><button id="addNote" class="notes-add-button" type="button" aria-label="새 메모 추가">＋</button></div></div>
         <section class="notes-panel"><div id="notesList" class="notes-list"></div></section>
       </section>
     </main>
@@ -74,6 +74,15 @@
       <div class="date-picker-week"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
       <div id="datePickerDays" class="date-picker-days"></div>
       <div class="date-picker-foot"><span class="date-picker-legend"><i></i>숙제가 있는 달</span><button id="datePickerToday" type="button">오늘로</button></div>
+    </div>
+    <div id="deleteScheduleDialog" class="delete-dialog" role="dialog" aria-modal="true" aria-labelledby="deleteScheduleDialogTitle" aria-describedby="deleteScheduleDialogDescription" hidden>
+      <div class="delete-dialog-card">
+        <div class="delete-dialog-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9.5 7V4.8h5V7"/><path d="M4.5 7h15"/><path class="delete-dialog-bin" d="M6.8 7l1 12.2h8.4L17.2 7Z"/><path d="M10.4 11v5.2M13.6 11v5.2"/></svg></div>
+        <h2 id="deleteScheduleDialogTitle">일정을 삭제할까요?</h2>
+        <div class="delete-dialog-schedule"><span aria-hidden="true"></span><strong id="deleteScheduleDialogName"></strong></div>
+        <p id="deleteScheduleDialogDescription">삭제하면 되돌릴 수 없어요</p>
+        <div class="delete-dialog-actions"><button id="deleteScheduleCancel" type="button">취소</button><button id="deleteScheduleConfirm" type="button">삭제하기</button></div>
+      </div>
     </div>
     <script src="app.js"></script>
   </body>

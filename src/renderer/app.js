@@ -466,11 +466,15 @@ window.addEventListener('auxclick', event => {
 });
 updateHistoryControls();
 const notesStorageKey = 'myholypoly.notes';
+const noteLimit = 9;
+let noteLimitMessageTimer = null;
 let notes = (() => { try { return JSON.parse(localStorage.getItem(notesStorageKey) || '[]'); } catch { return []; } })();
 function saveNotes() { localStorage.setItem(notesStorageKey, JSON.stringify(notes)); }
 function noteDate(value) { return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value)); }
-function renderNotes() { const host = $('#notesList'); if (!host) return; if (!notes.length) { host.innerHTML = '<div class="notes-empty"><span aria-hidden="true"></span><strong>아직 작성한 메모가 없습니다.</strong><small>오른쪽 위 + 버튼을 눌러 메모를 추가하세요.</small></div>'; return; } host.innerHTML = notes.map(note => `<article class="note-card" data-note-id="${note.id}"><div class="note-card-head"><input data-note-title value="${escapeHtml(note.title)}" placeholder="메모 제목" aria-label="메모 제목"><button type="button" data-delete-note aria-label="메모 삭제">삭제</button></div><textarea data-note-body placeholder="메모 내용을 입력하세요" aria-label="메모 내용">${escapeHtml(note.body)}</textarea><footer>${noteDate(note.updatedAt)}</footer></article>`).join(''); }
-function createNote() { const note = { id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, title: '', body: '', updatedAt: new Date().toISOString() }; notes.unshift(note); saveNotes(); renderNotes(); requestAnimationFrame(() => $('#notesList [data-note-title]')?.focus()); }
+function syncNoteLimit() { const count = notes.length; const reached = count >= noteLimit; $('#noteCount').textContent = `${Math.min(count, noteLimit)} / ${noteLimit}`; $('#addNote').disabled = reached; $('#addNote').setAttribute('aria-disabled', String(reached)); const control = $('.notes-add-control'); control.dataset.limitReached = String(reached); control.title = reached ? `메모는 최대 ${noteLimit}개까지 만들 수 있어요` : ''; if (!reached) { clearTimeout(noteLimitMessageTimer); $('#noteLimitMessage').hidden = true; } }
+function showNoteLimitMessage() { const message = $('#noteLimitMessage'); clearTimeout(noteLimitMessageTimer); message.hidden = false; noteLimitMessageTimer = setTimeout(() => { message.hidden = true; }, 2400); }
+function renderNotes() { const host = $('#notesList'); if (!host) return; syncNoteLimit(); if (!notes.length) { host.innerHTML = '<div class="notes-empty"><span aria-hidden="true"></span><strong>아직 작성한 메모가 없습니다.</strong><small>오른쪽 위 + 버튼을 눌러 메모를 추가하세요.</small></div>'; return; } host.innerHTML = notes.map(note => `<article class="note-card" data-note-id="${note.id}"><div class="note-card-head"><input data-note-title value="${escapeHtml(note.title)}" placeholder="메모 제목" aria-label="메모 제목"><button type="button" data-delete-note aria-label="메모 삭제">삭제</button></div><textarea data-note-body placeholder="메모 내용을 입력하세요" aria-label="메모 내용">${escapeHtml(note.body)}</textarea><footer>${noteDate(note.updatedAt)}</footer></article>`).join(''); }
+function createNote() { if (notes.length >= noteLimit) return showNoteLimitMessage(); const note = { id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, title: '', body: '', updatedAt: new Date().toISOString() }; notes.unshift(note); saveNotes(); renderNotes(); if (notes.length === noteLimit) showNoteLimitMessage(); requestAnimationFrame(() => $('#notesList [data-note-title]')?.focus()); }
 $('#addNote').onclick = createNote;
 $('#notesList').onclick = event => { if (event.target.closest('[data-create-note]')) return createNote(); const card = event.target.closest('[data-note-id]'); if (!card || !event.target.closest('[data-delete-note]')) return; notes = notes.filter(note => note.id !== card.dataset.noteId); saveNotes(); renderNotes(); };
 $('#notesList').oninput = event => { const card = event.target.closest('[data-note-id]'); if (!card) return; const note = notes.find(item => item.id === card.dataset.noteId); if (!note) return; if (event.target.matches('[data-note-title]')) note.title = event.target.value; if (event.target.matches('[data-note-body]')) note.body = event.target.value; note.updatedAt = new Date().toISOString(); saveNotes(); card.querySelector('footer').textContent = noteDate(note.updatedAt); };
@@ -543,9 +547,9 @@ document.addEventListener('click', () => { $('#monthPopover').hidden = true; $('
 window.addEventListener('resize', positionMonthPopover);
 updateMonthPicker();
 progressScope = overviewScope;
-function isVisibleTask(item, done) { const monthValue = $('#ganttMonth').value || today.slice(0, 7); const [year, month] = monthValue.split('-').map(Number); const first = `${monthValue}-01`; const last = `${monthValue}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`; const start = item.startDate || item.date; const due = item.dueDate || start; if (start > last || due < first || (hideCompleted && done)) return false; const diff = dayDiff(due); if (progressScope === 'all') return true; if (progressScope === 'urgent') return diff !== '' && diff >= 0 && diff <= 3; if (progressScope === 'today') return due === today; const week = currentWeekRange(); return due >= week.start && due <= week.end; }
+function isVisibleTask(item) { const monthValue = $('#ganttMonth').value || today.slice(0, 7); const [year, month] = monthValue.split('-').map(Number); const first = `${monthValue}-01`; const last = `${monthValue}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`; const start = item.startDate || item.date; const due = item.dueDate || start; if (start > last || due < first) return false; const diff = dayDiff(due); if (progressScope === 'all') return true; if (progressScope === 'urgent') return diff !== '' && diff >= 0 && diff <= 3; if (progressScope === 'today') return due === today; const week = currentWeekRange(); return due >= week.start && due <= week.end; }
 function renderSidebarSummary() { const monthValue = $('#ganttMonth').value || today.slice(0, 7); const items = allItems().filter(item => { const start = item.startDate || item.date; const due = item.dueDate || start; return start?.startsWith(monthValue) || due?.startsWith(monthValue); }); const tasks = items.flatMap(item => lines(item).map((_, index) => ({ done: Boolean(item.done?.[index]), dueDate: item.dueDate }))); const done = tasks.filter(task => task.done).length; const remaining = tasks.length - done; const rate = tasks.length ? Math.round(done / tasks.length * 100) : 0; const badge = $('#progressNavBadge'); if (badge) { badge.textContent = String(remaining); badge.hidden = remaining === 0; } if ($('#overviewCompletionRate')) $('#overviewCompletionRate').textContent = `${rate}%`; if ($('#overviewCompletionBar')) $('#overviewCompletionBar').style.width = `${rate}%`; }
-function renderChecklist() { const host = $('#checklistList'); const tasks = allItems().flatMap(item => lines(item).map((text, lineIndex) => ({ item, text, lineIndex, done: Boolean(item.done?.[lineIndex]) }))).filter(task => isVisibleTask(task.item, task.done)); host.innerHTML = ''; $('#taskCount').textContent = progressScope === 'urgent' ? `3일 이내 · ${tasks.length}개` : `${tasks.filter(task => !task.done).length}개 남음`; if (!tasks.length) { host.innerHTML = progressScope === 'urgent' ? '<p class="muted">3일 이내 마감인 미완료 할 일이 없습니다.</p>' : '<p class="muted">이 범위에 표시할 할 일이 없습니다.</p>'; return; } tasks.sort((a, b) => (a.done - b.done) || (a.item.dueDate || '9999').localeCompare(b.item.dueDate || '9999')).forEach(task => { const diff = dayDiff(task.item.dueDate); const dueLabel = diff === '' ? '마감일 없음' : diff < 0 ? '기한 지남' : diff === 0 ? 'D-day' : `D-${diff}`; const urgency = !task.done && diff !== '' && diff <= 1 ? 'critical' : !task.done && diff !== '' && diff <= 3 ? 'soon' : ''; const row = document.createElement('label'); row.className = `action-task ${task.done ? 'done' : ''} ${urgency}`; row.innerHTML = `<input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span><span class="task-body"><small>${escapeHtml(task.item.title)}</small><strong>${escapeHtml(task.text)}</strong></span><span class="task-deadline">${dueLabel}</span>`; host.append(row); row.querySelector('input').onchange = async event => { try { const result = await bridge.plan.toggleLine(task.item.date, task.item.itemIndex, task.lineIndex, event.target.checked); savedPlans = result.plans; renderChecklist(); renderGantt(); } catch (error) { setMessage(error.message, true); event.target.checked = !event.target.checked; } }; }); }
+function renderChecklist() { const host = $('#checklistList'); const tasks = allItems().flatMap(item => lines(item).map((text, lineIndex) => ({ item, text, lineIndex, done: Boolean(item.done?.[lineIndex]) }))).filter(task => isVisibleTask(task.item)); host.innerHTML = ''; $('#taskCount').textContent = progressScope === 'urgent' ? `3일 이내 · ${tasks.length}개` : `${tasks.filter(task => !task.done).length}개 남음`; if (!tasks.length) { host.innerHTML = progressScope === 'urgent' ? '<p class="muted">3일 이내 마감인 미완료 할 일이 없습니다.</p>' : '<p class="muted">이 범위에 표시할 할 일이 없습니다.</p>'; return; } tasks.sort((a, b) => (a.done - b.done) || (a.item.dueDate || '9999').localeCompare(b.item.dueDate || '9999')).forEach(task => { const diff = dayDiff(task.item.dueDate); const dueLabel = diff === '' ? '마감일 없음' : diff < 0 ? '기한 지남' : diff === 0 ? 'D-day' : `D-${diff}`; const urgency = !task.done && diff !== '' && diff <= 1 ? 'critical' : !task.done && diff !== '' && diff <= 3 ? 'soon' : ''; const row = document.createElement('label'); row.className = `action-task ${task.done ? 'done' : ''} ${urgency}`; row.innerHTML = `<input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span><span class="task-body"><small>${escapeHtml(task.item.title)}</small><strong>${escapeHtml(task.text)}</strong></span><span class="task-deadline">${dueLabel}</span>`; host.append(row); row.querySelector('input').onchange = async event => { try { const result = await bridge.plan.toggleLine(task.item.date, task.item.itemIndex, task.lineIndex, event.target.checked); savedPlans = result.plans; renderChecklist(); renderGantt(); } catch (error) { setMessage(error.message, true); event.target.checked = !event.target.checked; } }; }); }
 function courseTargets(course) { return [...new Map(course.tasks.map(task => [`${task.item.date}:${task.item.itemIndex}`, { date: task.item.date, itemIndex: task.item.itemIndex }])).values()]; }
 function editSchedule(course) {
   const completeTasks = allItems()
@@ -588,13 +592,45 @@ async function saveInlineSchedule(course) {
   } catch (error) { setMessage(error.message, true); }
 }
 async function deleteSchedule(course) {
-  if (!window.confirm(`'${course.title}' 일정을 삭제할까요?`)) return;
+  closeScheduleMenus();
+  if (!await confirmScheduleDelete(course.title)) return;
   try {
     const result = await bridge.plan.deleteItems(courseTargets(course));
     savedPlans = result.plans;
     if (selectedCourseKey === course.key) selectedCourseKey = '';
     renderChecklist(); renderGantt();
   } catch (error) { setMessage(error.message, true); }
+}
+function confirmScheduleDelete(title) {
+  const dialog = $('#deleteScheduleDialog');
+  const cancel = $('#deleteScheduleCancel');
+  const confirm = $('#deleteScheduleConfirm');
+  const previousFocus = document.activeElement;
+  $('#deleteScheduleDialogName').textContent = title || '이름 없는 일정';
+  dialog.hidden = false;
+  return new Promise(resolve => {
+    const finish = accepted => {
+      dialog.hidden = true;
+      dialog.removeEventListener('click', onBackdropClick);
+      document.removeEventListener('keydown', onKeyDown, true);
+      cancel.onclick = null;
+      confirm.onclick = null;
+      previousFocus?.focus?.();
+      resolve(accepted);
+    };
+    const onBackdropClick = event => { if (event.target === dialog) finish(false); };
+    const onKeyDown = event => {
+      if (event.key === 'Escape') { event.preventDefault(); finish(false); }
+      if (event.key !== 'Tab') return;
+      if (event.shiftKey && document.activeElement === cancel) { event.preventDefault(); confirm.focus(); }
+      if (!event.shiftKey && document.activeElement === confirm) { event.preventDefault(); cancel.focus(); }
+    };
+    dialog.addEventListener('click', onBackdropClick);
+    document.addEventListener('keydown', onKeyDown, true);
+    cancel.onclick = () => finish(false);
+    confirm.onclick = () => finish(true);
+    requestAnimationFrame(() => cancel.focus());
+  });
 }
 function closeScheduleMenus() { document.querySelectorAll('.schedule-menu.open').forEach(menu => menu.classList.remove('open')); document.querySelectorAll('.schedule-more[aria-expanded="true"]').forEach(button => button.setAttribute('aria-expanded', 'false')); }
 function spotlightSchedule() {
@@ -633,18 +669,29 @@ function renderChecklist() {
   const groups = new Map();
   allItems().forEach(item => lines(item).forEach((text, lineIndex) => {
     const done = Boolean(item.done?.[lineIndex]);
-    if (!isVisibleTask(item, done)) return;
+    if (!isVisibleTask(item)) return;
     const key = courseKey(item.title, item.dueDate);
     if (!groups.has(key)) groups.set(key, { key, title: item.title, startDate: item.startDate || item.date, dueDate: item.dueDate, tasks: [] });
-    groups.get(key).tasks.push({ item, text, lineIndex, done });
+    const group = groups.get(key);
+    const itemStartDate = item.startDate || item.date;
+    if (itemStartDate && (!group.startDate || itemStartDate < group.startDate)) group.startDate = itemStartDate;
+    group.tasks.push({ item, text, lineIndex, done });
   }));
-  const courses = [...groups.values()].sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999'));
+  const isCourseComplete = course => course.tasks.length > 0 && course.tasks.every(task => task.done);
+  const courses = [...groups.values()]
+    .filter(course => !hideCompleted || !isCourseComplete(course))
+    .sort((a, b) =>
+      Number(isCourseComplete(a)) - Number(isCourseComplete(b))
+      || (a.dueDate || '9999-12-31').localeCompare(b.dueDate || '9999-12-31')
+      || (a.startDate || '9999-12-31').localeCompare(b.startDate || '9999-12-31')
+      || (a.title || '').localeCompare(b.title || '', 'ko')
+    );
   host.innerHTML = '';
   $('#taskCount').textContent = `${courses.reduce((count, course) => count + course.tasks.filter(task => !task.done).length, 0)}개`;
   if (!courses.length) { host.innerHTML = progressScope === 'urgent' ? '<p class="muted">3일 이내 마감인 미완료 할 일이 없습니다.</p>' : '<p class="muted">이 범위에 표시할 할 일이 없습니다.</p>'; return; }
   courses.forEach(course => {
     const diff = dayDiff(course.dueDate);
-    const allComplete = course.tasks.length > 0 && course.tasks.every(task => task.done);
+    const allComplete = isCourseComplete(course);
     const dueLabel = allComplete ? '완료' : diff === '' ? '마감일 없음' : diff < 0 ? '기한 지남' : diff === 0 ? 'D-day' : `D-${diff}`;
     const urgency = allComplete ? '' : diff !== '' && diff <= 1 ? 'critical' : diff !== '' && diff <= 3 ? 'soon' : '';
     const palette = coursePalette(course.title);
@@ -655,7 +702,7 @@ function renderChecklist() {
     card.style.setProperty('--course-bg', palette.bg); card.style.setProperty('--course-border', palette.border); card.style.setProperty('--course-soft', palette.soft); card.style.setProperty('--course-text', palette.text);
     card.innerHTML = editing
       ? `<div class="inline-course-editor"><div class="inline-editor-title"><strong>${escapeHtml(course.title)}</strong><small>할 일 내용 편집</small></div><div class="inline-course-tasks">${inlineCourseDraft.tasks.map((task, index) => `<div><span>${String(index + 1).padStart(2, '0')}</span><input data-inline-task="${index}" value="${escapeHtml(task.text)}"><button type="button" data-inline-remove="${index}" aria-label="내용 삭제">삭제</button></div>`).join('')}</div><button type="button" class="inline-add-task">＋ 내용 추가</button><div class="inline-editor-actions"><button type="button" class="inline-cancel">취소</button><button type="button" class="inline-save">수정 저장</button></div></div>`
-      : `<header><div><span class="course-dot"></span><strong>${escapeHtml(course.title)}</strong><small>시작 ${formatDate(course.startDate)} · 마감 ${formatDate(course.dueDate)}</small></div><div class="action-course-meta"><span class="task-deadline">${dueLabel}</span><div class="schedule-actions"><button type="button" class="schedule-more" aria-label="일정 메뉴" aria-expanded="false">•••</button><div class="schedule-menu"><button type="button" data-edit-schedule><img src="./icons/icon-edit.svg" alt="">일정 수정</button><span class="schedule-menu-separator" aria-hidden="true"></span><button type="button" data-delete-schedule><img src="./icons/icon-delete.svg" alt="">일정 삭제</button></div></div></div></header><div class="action-course-tasks">${course.tasks.map(task => `<label class="action-course-line ${task.done ? 'done' : ''}"><input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span><span>${escapeHtml(task.text)}</span></label>`).join('')}</div><footer>${hideCompleted ? `${course.tasks.length}개 남음` : `${course.tasks.filter(task => task.done).length}/${course.tasks.length} 완료`}</footer>`;
+      : `<header><div><span class="course-dot"></span><strong>${escapeHtml(course.title)}</strong><small>시작 ${formatDate(course.startDate)} · 마감 ${formatDate(course.dueDate)}</small></div><div class="action-course-meta"><span class="task-deadline">${dueLabel}</span><div class="schedule-actions"><button type="button" class="schedule-more" aria-label="일정 메뉴" aria-expanded="false">•••</button><div class="schedule-menu"><button type="button" data-edit-schedule><img src="./icons/icon-edit.svg" alt="">일정 수정</button><span class="schedule-menu-separator" aria-hidden="true"></span><button type="button" data-delete-schedule><img src="./icons/icon-delete.svg" alt="">일정 삭제</button></div></div></div></header><div class="action-course-tasks">${course.tasks.map(task => `<label class="action-course-line ${task.done ? 'done' : ''}"><input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span><span>${escapeHtml(task.text)}</span></label>`).join('')}</div><footer>${hideCompleted ? `${course.tasks.filter(task => !task.done).length}개 남음` : `${course.tasks.filter(task => task.done).length}/${course.tasks.length} 완료`}</footer>`;
     const wrapper = document.createElement('div');
     wrapper.className = 'spot-wrap';
     wrapper.dataset.scheduleId = course.key;
