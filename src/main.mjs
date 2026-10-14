@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron';
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { captureHomeworkByDate, captureOpenHomework, captureTodayHomework, getEpolyStatus, launchEpoly, openCalendar } from './services/epoly.mjs';
@@ -14,6 +14,7 @@ const planFile = () => join(app.getPath('userData'), 'plan.json');
 const blankPlan = { version: 1, plans: {} };
 const epolyInstallGuideUrl = 'https://www.youtube.com/watch?v=g7CY3u4QoWU';
 const githubRepositoryUrl = 'https://github.com/magune-lab/myholypoly';
+const desktopShortcutPath = () => join(app.getPath('desktop'), 'myholypoly.lnk');
 const retiredSettingsFiles = ['gemini-api-key.bin', 'ai-organizing-rules.txt'];
 const polyWebLoginUrl = 'https://www.poly-english.com/member/login.do';
 let polyWebWindow = null;
@@ -32,6 +33,30 @@ async function removeRetiredSettings() {
     try { await unlink(join(app.getPath('userData'), file)); }
     catch (error) { if (error?.code !== 'ENOENT') throw error; }
   }));
+}
+async function desktopShortcutExists() {
+  try { await access(desktopShortcutPath()); return true; }
+  catch { return false; }
+}
+async function setDesktopShortcut(enabled) {
+  const shortcutPath = desktopShortcutPath();
+  if (!enabled) {
+    try { await unlink(shortcutPath); }
+    catch (error) { if (error?.code !== 'ENOENT') throw error; }
+    return { enabled: false };
+  }
+  const exists = await desktopShortcutExists();
+  const shortcutIcon = app.isPackaged ? process.execPath : appIcon;
+  const written = shell.writeShortcutLink(shortcutPath, exists ? 'replace' : 'create', {
+    target: process.execPath,
+    cwd: dirname(process.execPath),
+    icon: shortcutIcon,
+    iconIndex: 0,
+    description: 'myholypoly 숙제 플래너',
+    appUserModelId: 'com.myholypoly.desktop'
+  });
+  if (!written) throw new Error('바탕화면 바로가기를 만들지 못했습니다.');
+  return { enabled: true };
 }
 function createWindow() {
   const window = new BrowserWindow({
@@ -156,6 +181,10 @@ async function capturePolyWebHomework(dateValue) {
 app.whenReady().then(async () => {
   await removeRetiredSettings();
   app.setAppUserModelId('com.myholypoly.desktop');
+  if (await desktopShortcutExists()) {
+    try { await setDesktopShortcut(true); }
+    catch (error) { console.error('바탕화면 바로가기 업데이트 실패:', error); }
+  }
   Menu.setApplicationMenu(null);
   ipcMain.handle('window:minimize', event => {
     const window = BrowserWindow.fromWebContents(event.sender);
@@ -171,6 +200,8 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle('app:info', () => ({ version: app.getVersion() }));
   ipcMain.handle('app:open-repository', () => shell.openExternal(githubRepositoryUrl));
+  ipcMain.handle('app:desktop-shortcut-status', async () => ({ enabled: await desktopShortcutExists() }));
+  ipcMain.handle('app:set-desktop-shortcut', (_event, enabled) => setDesktopShortcut(Boolean(enabled)));
   ipcMain.handle('epoly:status', () => getEpolyStatus());
   ipcMain.handle('epoly:launch', () => launchEpoly());
   ipcMain.handle('epoly:open-homework', () => captureOpenHomework());
@@ -189,7 +220,7 @@ app.whenReady().then(async () => {
     const previous = plan.plans[draft.date];
     plan.plans[draft.date] = {
       date: draft.date,
-      items: draft.items.map(({ title, detail, startDate = draft.date, dueDate = '', done = [] }) => ({ title, detail, startDate, dueDate, done: Array.isArray(done) ? done.map(Boolean) : [] })),
+      items: draft.items.map(({ title, detail, startDate = draft.date, dueDate = '', done = [], goalDates = [] }) => ({ title, detail, startDate, dueDate, done: Array.isArray(done) ? done.map(Boolean) : [], goalDates: Array.isArray(goalDates) ? goalDates.map(value => String(value || '')) : [] })),
       source: draft.source || 'manual',
       sourceChanged: Boolean(previous && previous.source !== draft.source),
       updatedAt: new Date().toISOString()
@@ -203,6 +234,19 @@ app.whenReady().then(async () => {
     if (!item) throw new Error('일정을 찾지 못했습니다.');
     const count = String(item.detail || '').split(/\r?\n/).filter(Boolean).length;
     item.done = Array.from({ length: count }, (_, index) => index === lineIndex ? Boolean(checked) : Boolean(item.done?.[index]));
+    item.goalDates = Array.from({ length: count }, (_, index) => index === lineIndex && checked ? '' : String(item.goalDates?.[index] || ''));
+    plan.plans[date].updatedAt = new Date().toISOString();
+    await savePlan(plan);
+    return plan;
+  });
+  ipcMain.handle('plan:toggle-today-goal', async (_event, { date, itemIndex, lineIndex, enabled, goalDate }) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(goalDate || ''))) throw new Error('오늘 목표 날짜가 올바르지 않습니다.');
+    const plan = await readPlan();
+    const item = plan.plans?.[date]?.items?.[itemIndex];
+    if (!item) throw new Error('일정을 찾지 못했습니다.');
+    const count = String(item.detail || '').split(/\r?\n/).filter(Boolean).length;
+    if (!Number.isInteger(lineIndex) || lineIndex < 0 || lineIndex >= count) throw new Error('할 일을 찾지 못했습니다.');
+    item.goalDates = Array.from({ length: count }, (_, index) => index === lineIndex ? (enabled ? goalDate : '') : String(item.goalDates?.[index] || ''));
     plan.plans[date].updatedAt = new Date().toISOString();
     await savePlan(plan);
     return plan;
@@ -218,7 +262,8 @@ app.whenReady().then(async () => {
       detail: item.detail || '',
       startDate: item.startDate || target.date,
       dueDate: item.dueDate || '',
-      done: Array.from({ length: lineCount }, (_, index) => Array.isArray(item.done) ? Boolean(item.done[index]) : Boolean(previous.done?.[index]))
+      done: Array.from({ length: lineCount }, (_, index) => Array.isArray(item.done) ? Boolean(item.done[index]) : Boolean(previous.done?.[index])),
+      goalDates: Array.from({ length: lineCount }, (_, index) => Array.isArray(item.goalDates) ? String(item.goalDates[index] || '') : String(previous.goalDates?.[index] || ''))
     };
     plan.plans[target.date].updatedAt = new Date().toISOString();
     await savePlan(plan);

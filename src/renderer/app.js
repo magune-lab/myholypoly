@@ -4,6 +4,33 @@ const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), S
 const bridge = window.myholypoly;
 bridge.appInfo.read().then(({ version }) => { $('#appVersion').textContent = `v${version}`; }).catch(() => {});
 $('#openGithubRepository').onclick = event => { event.preventDefault(); bridge.appInfo.openRepository(); };
+const desktopShortcutToggle = $('#desktopShortcutToggle');
+const desktopShortcutMessage = $('#desktopShortcutMessage');
+async function refreshDesktopShortcut() {
+  try {
+    const { enabled } = await bridge.appInfo.desktopShortcutStatus();
+    desktopShortcutToggle.checked = enabled;
+  } catch (error) {
+    desktopShortcutToggle.disabled = true;
+    desktopShortcutMessage.textContent = error.message;
+  }
+}
+desktopShortcutToggle.onchange = async () => {
+  const enabled = desktopShortcutToggle.checked;
+  desktopShortcutToggle.disabled = true;
+  desktopShortcutMessage.textContent = enabled ? '바로가기를 만드는 중이에요' : '바로가기를 삭제하는 중이에요';
+  try {
+    const result = await bridge.appInfo.setDesktopShortcut(enabled);
+    desktopShortcutToggle.checked = result.enabled;
+    desktopShortcutMessage.textContent = result.enabled ? '바탕화면에 바로가기를 만들었어요' : '바탕화면 바로가기를 삭제했어요';
+  } catch (error) {
+    desktopShortcutToggle.checked = !enabled;
+    desktopShortcutMessage.textContent = error.message;
+  } finally {
+    desktopShortcutToggle.disabled = false;
+  }
+};
+refreshDesktopShortcut();
 $('#minimizeApp').onclick = () => bridge.windowControls.minimize();
 $('#closeApp').onclick = () => window.close();
 async function toggleMaximize() {
@@ -23,6 +50,8 @@ let inlineCourseDraft = null;
 let savedPlans = {};
 let selectedCourseKey = '';
 let focusId = '';
+const todayGoalKey = task => `${task.item.date}:${task.item.itemIndex}:${task.lineIndex}`;
+const todayGoalChipSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4"/><path d="M7 4h13l-3 4.5 3 4.5H7Z"/></svg>';
 function prepareProgressFocus(key) {
   if (!key) return;
   selectedCourseKey = key;
@@ -441,8 +470,8 @@ function showPage(page, { record = true } = {}) {
   }
   document.querySelectorAll('.nav-item').forEach(button => { const selected = button.dataset.page === page; button.classList.toggle('active', selected); button.setAttribute('aria-selected', String(selected)); });
   document.querySelectorAll('.app-page').forEach(section => { section.hidden = section.id !== `${page}Page`; section.classList.toggle('active', section.hidden === false); });
-  $('#scheduleFilterBar').hidden = page === 'register' || page === 'notes';
-  if (page !== 'register' && page !== 'notes') document.querySelector(`#${page}Page .page-title`).insertAdjacentElement('afterend', $('#scheduleFilterBar'));
+  $('#scheduleFilterBar').hidden = page === 'register' || page === 'notes' || page === 'settings';
+  if (page !== 'register' && page !== 'notes' && page !== 'settings') document.querySelector(`#${page}Page .page-title`).insertAdjacentElement('afterend', $('#scheduleFilterBar'));
   if (page === 'overview') { renderGantt(); scrollGanttToToday(); }
   if (page === 'progress') { renderChecklist(); if (focusId) requestAnimationFrame(spotlightSchedule); }
   if (page === 'register') refreshStatus().catch(error => { setMessage(error.message, true); setStepMessage(Math.min(registerStep, 3), error.message, 'error'); });
@@ -580,7 +609,8 @@ async function saveInlineSchedule(course) {
         dueDate: inlineCourseDraft.dueDate,
         startDate: original?.startDate || target.date,
         detail: tasks.map(task => task.text.trim()).join('\n'),
-        done: tasks.map(task => Boolean(task.done))
+        done: tasks.map(task => Boolean(task.done)),
+        goalDates: tasks.map(task => String(task.item.goalDates?.[task.lineIndex] || ''))
       });
       savedPlans = result.plans;
     }
@@ -697,12 +727,13 @@ function renderChecklist() {
     const palette = coursePalette(course.title);
     const card = document.createElement('article');
     const editing = inlineCourseDraft?.key === course.key;
+    const todayGoalCount = course.tasks.filter(task => !task.done && task.item.goalDates?.[task.lineIndex] === today).length;
     card.className = `action-course ${urgency} ${allComplete ? 'is-complete' : ''} ${course.key === selectedCourseKey ? 'is-target' : ''} ${editing ? 'is-editing' : ''}`;
     card.dataset.courseKey = course.key;
     card.style.setProperty('--course-bg', palette.bg); card.style.setProperty('--course-border', palette.border); card.style.setProperty('--course-soft', palette.soft); card.style.setProperty('--course-text', palette.text);
     card.innerHTML = editing
       ? `<div class="inline-course-editor"><div class="inline-editor-title"><strong>${escapeHtml(course.title)}</strong><small>할 일 내용 편집</small></div><div class="inline-course-tasks">${inlineCourseDraft.tasks.map((task, index) => `<div><span>${String(index + 1).padStart(2, '0')}</span><input data-inline-task="${index}" value="${escapeHtml(task.text)}"><button type="button" data-inline-remove="${index}" aria-label="내용 삭제">삭제</button></div>`).join('')}</div><button type="button" class="inline-add-task">＋ 내용 추가</button><div class="inline-editor-actions"><button type="button" class="inline-cancel">취소</button><button type="button" class="inline-save">수정 저장</button></div></div>`
-      : `<header><div><span class="course-dot"></span><strong>${escapeHtml(course.title)}</strong><small>시작 ${formatDate(course.startDate)} · 마감 ${formatDate(course.dueDate)}</small></div><div class="action-course-meta"><span class="task-deadline">${dueLabel}</span><div class="schedule-actions"><button type="button" class="schedule-more" aria-label="일정 메뉴" aria-expanded="false">•••</button><div class="schedule-menu"><button type="button" data-edit-schedule><img src="./icons/icon-edit.svg" alt="">일정 수정</button><span class="schedule-menu-separator" aria-hidden="true"></span><button type="button" data-delete-schedule><img src="./icons/icon-delete.svg" alt="">일정 삭제</button></div></div></div></header><div class="action-course-tasks">${course.tasks.map(task => `<label class="action-course-line ${task.done ? 'done' : ''}"><input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span><span>${escapeHtml(task.text)}</span></label>`).join('')}</div><footer>${hideCompleted ? `${course.tasks.filter(task => !task.done).length}개 남음` : `${course.tasks.filter(task => task.done).length}/${course.tasks.length} 완료`}</footer>`;
+      : `<header><div><span class="course-dot"></span><strong>${escapeHtml(course.title)}</strong><small>시작 ${formatDate(course.startDate)} · 마감 ${formatDate(course.dueDate)}</small></div><div class="action-course-meta"><span class="task-deadline">${dueLabel}</span><div class="schedule-actions"><button type="button" class="schedule-more" aria-label="일정 메뉴" aria-expanded="false">•••</button><div class="schedule-menu"><button type="button" data-edit-schedule><img src="./icons/icon-edit.svg" alt="">일정 수정</button><span class="schedule-menu-separator" aria-hidden="true"></span><button type="button" data-delete-schedule><img src="./icons/icon-delete.svg" alt="">일정 삭제</button></div></div></div></header><div class="action-course-tasks">${course.tasks.map(task => { const goal = !task.done && task.item.goalDates?.[task.lineIndex] === today; const key = todayGoalKey(task); return `<div class="action-course-line ${task.done ? 'done' : ''}"><label class="action-task-check" aria-label="${task.done ? '완료 취소' : '완료'}"><input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span></label>${task.done ? `<span class="action-line-text">${escapeHtml(task.text)}</span>` : `<button type="button" class="today-goal-text ${goal ? 'is-goal' : ''}" data-goal-key="${escapeHtml(key)}" aria-pressed="${goal}" aria-label="${escapeHtml(task.text)}: ${goal ? '오늘 목표 해제' : '오늘 목표로 지정'}" data-tooltip="${goal ? '오늘 목표예요' : '눌러서 오늘 목표로 지정'}"><span>${escapeHtml(task.text)}</span></button>`}</div>`; }).join('')}</div><footer>${todayGoalCount ? `<span class="today-goal-chip">${todayGoalChipSvg}오늘 목표 ${todayGoalCount}</span>` : ''}<span class="course-progress-summary">${hideCompleted ? `${course.tasks.filter(task => !task.done).length}개 남음` : `${course.tasks.filter(task => task.done).length}/${course.tasks.length} 완료`}</span></footer>`;
     const wrapper = document.createElement('div');
     wrapper.className = 'spot-wrap';
     wrapper.dataset.scheduleId = course.key;
@@ -716,7 +747,25 @@ function renderChecklist() {
       card.querySelector('.inline-save').onclick = () => saveInlineSchedule(course);
       return;
     }
-    card.querySelectorAll('input').forEach((input, index) => input.onchange = async event => { const task = course.tasks[index]; try { const result = await bridge.plan.toggleLine(task.item.date, task.item.itemIndex, task.lineIndex, event.target.checked); savedPlans = result.plans; renderChecklist(); renderGantt(); } catch (error) { setMessage(error.message, true); event.target.checked = !event.target.checked; } });
+    card.querySelectorAll('.action-task-check input').forEach((input, index) => input.onchange = async event => { const task = course.tasks[index]; try { const result = await bridge.plan.toggleLine(task.item.date, task.item.itemIndex, task.lineIndex, event.target.checked); savedPlans = result.plans; renderChecklist(); renderGantt(); } catch (error) { setMessage(error.message, true); event.target.checked = !event.target.checked; } });
+    card.querySelectorAll('.today-goal-text').forEach(button => {
+      button.onclick = async event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const task = course.tasks.find(candidate => todayGoalKey(candidate) === button.dataset.goalKey);
+        if (!task) return;
+        const enabled = button.getAttribute('aria-pressed') !== 'true';
+        button.disabled = true;
+        try {
+          const result = await bridge.plan.toggleTodayGoal(task.item.date, task.item.itemIndex, task.lineIndex, enabled, today);
+          savedPlans = result.plans;
+          renderChecklist();
+        } catch (error) {
+          setMessage(error.message, true);
+          button.disabled = false;
+        }
+      };
+    });
     const menu = card.querySelector('.schedule-menu');
     const more = card.querySelector('.schedule-more');
     more.onclick = event => { event.stopPropagation(); const opening = !menu.classList.contains('open'); closeScheduleMenus(); menu.classList.toggle('open', opening); more.setAttribute('aria-expanded', String(opening)); };
