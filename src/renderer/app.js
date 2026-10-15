@@ -309,9 +309,7 @@ function journeySlots(total, completed, maxSlots = 8) {
     ...Array.from({ length: total - completed }, (_, index) => ({ type: 'todo', next: index === 0 }))
   ];
   const remaining = total - completed;
-  return remaining > 0
-    ? [{ type: 'more', count: remaining }]
-    : [{ type: 'done-group', count: completed }];
+  return remaining > 0 ? [{ type: 'more', count: remaining }] : [];
 }
 function renderGantt() {
   const host = $('#ganttChart');
