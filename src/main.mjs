@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { captureHomeworkByDate, captureOpenHomework, captureTodayHomework, getEpolyStatus, launchEpoly, openCalendar } from './services/epoly.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
+const projectRoot = join(here, '..');
 const appIcon = join(here, '..', 'assets', 'myholypoly.ico');
 // Keep user data independent from the executable/version folder so extracted
 // releases and development builds all read the same schedules and localStorage.
@@ -19,6 +20,7 @@ const retiredSettingsFiles = ['gemini-api-key.bin', 'ai-organizing-rules.txt'];
 const polyWebLoginUrl = 'https://www.poly-english.com/member/login.do';
 let polyWebWindow = null;
 let mainWindow = null;
+let appQuitting = false;
 
 async function readPlan() {
   try { return JSON.parse(await readFile(planFile(), 'utf8')); }
@@ -49,6 +51,7 @@ async function setDesktopShortcut(enabled) {
   const shortcutIcon = app.isPackaged ? process.execPath : appIcon;
   const written = shell.writeShortcutLink(shortcutPath, exists ? 'replace' : 'create', {
     target: process.execPath,
+    args: app.isPackaged ? '' : `"${projectRoot}"`,
     cwd: dirname(process.execPath),
     icon: shortcutIcon,
     iconIndex: 0,
@@ -72,7 +75,10 @@ function createWindow() {
   });
   window.loadFile(join(here, 'renderer', 'index.html'));
   mainWindow = window;
-  window.on('closed', () => { if (mainWindow === window) mainWindow = null; });
+  window.on('closed', () => {
+    if (mainWindow === window) mainWindow = null;
+    if (process.platform !== 'darwin') app.quit();
+  });
 }
 
 async function openPolyWeb({ activate = true } = {}) {
@@ -94,6 +100,12 @@ async function openPolyWeb({ activate = true } = {}) {
     if (/^https:\/\/(?:www\.)?poly-english\.com\//i.test(url)) polyWebWindow.loadURL(url);
     else if (/^https:\/\//i.test(url)) shell.openExternal(url);
     return { action: 'deny' };
+  });
+  polyWebWindow.on('close', event => {
+    if (appQuitting) return;
+    event.preventDefault();
+    polyWebWindow.hide();
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.focus();
   });
   polyWebWindow.on('closed', () => { polyWebWindow = null; });
   await polyWebWindow.loadURL(polyWebLoginUrl);
@@ -181,7 +193,7 @@ async function capturePolyWebHomework(dateValue) {
 app.whenReady().then(async () => {
   await removeRetiredSettings();
   app.setAppUserModelId('com.myholypoly.desktop');
-  if (await desktopShortcutExists()) {
+  if (app.isPackaged && await desktopShortcutExists()) {
     try { await setDesktopShortcut(true); }
     catch (error) { console.error('바탕화면 바로가기 업데이트 실패:', error); }
   }
@@ -293,4 +305,5 @@ app.whenReady().then(async () => {
   createWindow();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
+app.on('before-quit', () => { appQuitting = true; });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

@@ -50,8 +50,72 @@ let inlineCourseDraft = null;
 let savedPlans = {};
 let selectedCourseKey = '';
 let focusId = '';
+const courseDividerIcons = new Map();
+const dividerIconNames = { star: '별', duck: '오리', sun: '해', heart: '하트', flower: '꽃', rocket: '로켓', cloud: '구름', apple: '사과', pencil: '연필', butterfly: '나비', clover: '네잎클로버', rainbow: '무지개' };
+let rainbowAudioContext = null;
 const todayGoalKey = task => `${task.item.date}:${task.item.itemIndex}:${task.lineIndex}`;
 const todayGoalChipSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4"/><path d="M7 4h13l-3 4.5 3 4.5H7Z"/></svg>';
+function dividerIconButton(courseKey, position) {
+  const stateKey = `${courseKey}:${position}`;
+  const icon = courseDividerIcons.get(stateKey) || 'star';
+  const positionName = position === 'top' ? '위쪽' : '아래쪽';
+  return `<button type="button" class="course-divider-icon ${icon === 'rainbow' ? 'is-rainbow' : ''}" data-divider-key="${escapeHtml(stateKey)}" data-divider-position="${position}" data-divider-icon="${icon}" aria-label="${positionName} 카드 장식 바꾸기, 현재 ${dividerIconNames[icon]}"><img src="./icons/divider-${icon}.svg?v=2" alt="" /></button>`;
+}
+function randomDividerIcon(current) {
+  if (Math.random() < 0.08) return 'rainbow';
+  const choices = ['star', 'duck', 'sun', 'heart', 'flower', 'rocket', 'cloud', 'apple', 'pencil', 'butterfly', 'clover'].filter(icon => icon !== current);
+  return choices[Math.floor(Math.random() * choices.length)];
+}
+function playRainbowChime() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
+  rainbowAudioContext ||= new AudioContextClass();
+  const context = rainbowAudioContext;
+  if (context.state === 'suspended') context.resume().catch(() => {});
+  const start = context.currentTime + 0.015;
+  const reverb = context.createConvolver();
+  const reverbLength = Math.floor(context.sampleRate * 1.15);
+  const impulse = context.createBuffer(2, reverbLength, context.sampleRate);
+  for (let channel = 0; channel < impulse.numberOfChannels; channel += 1) {
+    const samples = impulse.getChannelData(channel);
+    for (let index = 0; index < reverbLength; index += 1) {
+      const decay = Math.pow(1 - index / reverbLength, 3.4);
+      samples[index] = (Math.random() * 2 - 1) * decay * 0.32;
+    }
+  }
+  reverb.buffer = impulse;
+  const master = context.createGain();
+  const dry = context.createGain();
+  const wet = context.createGain();
+  master.gain.setValueAtTime(0.08, start);
+  master.gain.exponentialRampToValueAtTime(0.0001, start + 1.45);
+  dry.gain.value = 0.72;
+  wet.gain.value = 0.22;
+  dry.connect(master);
+  reverb.connect(wet);
+  wet.connect(master);
+  master.connect(context.destination);
+  const notes = [659.25, 783.99, 987.77, 1174.66, 1318.51];
+  const offsets = [0, 0.085, 0.19, 0.31, 0.43];
+  notes.forEach((frequency, noteIndex) => {
+    const noteStart = start + offsets[noteIndex];
+    [[1, 0.8, 0.95], [2.01, 0.24, 0.55], [3.94, 0.09, 0.32]].forEach(([ratio, level, duration]) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency * ratio;
+      oscillator.detune.value = (Math.random() - 0.5) * 7;
+      gain.gain.setValueAtTime(0.0001, noteStart);
+      gain.gain.exponentialRampToValueAtTime(level, noteStart + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + duration);
+      oscillator.connect(gain);
+      gain.connect(dry);
+      gain.connect(reverb);
+      oscillator.start(noteStart);
+      oscillator.stop(noteStart + duration + 0.03);
+    });
+  });
+}
 function prepareProgressFocus(key) {
   if (!key) return;
   selectedCourseKey = key;
@@ -200,13 +264,15 @@ function renderCourses() {
       const comparisonKey = `${courseIndex}:${lineIndex}`;
       return `<div class="focus-course-entry"><label class="focus-course-line"><span>${String(lineIndex + 1).padStart(2, '0')}</span><span class="task-input-wrap"><input data-course-line="${courseIndex}" data-line="${lineIndex}" value="${escapeHtml(line)}" placeholder="할 일"></span><button type="button" data-remove-line="${comparisonKey}" aria-label="항목 삭제">삭제</button></label></div>`;
     }).join('');
-    return `<article class="stacked-course ${courseIndex === activeCourseIndex ? 'active' : ''}" data-course="${courseIndex}" style="--course-bg:${palette.bg};--course-soft:${palette.soft}"><button type="button" class="course-accordion-head" data-toggle-course="${courseIndex}" aria-expanded="${courseIndex === activeCourseIndex}"><span class="course-accordion-number">${courseIndex + 1}</span><span class="course-accordion-summary"><strong class="course-accordion-name">${escapeHtml(course.title || '새 과목')}</strong><small>마감 ${course.dueDate ? formatDate(course.dueDate) : '미정'}</small></span><span class="course-accordion-chip">${dueBadge}</span><span class="course-accordion-chip">할 일 ${taskCount}개</span><span class="course-accordion-chevron" aria-hidden="true"></span></button><div class="course-accordion-body"><div class="focus-course-lines">${taskMarkup}</div><button class="add-focus-line" data-add-line="${courseIndex}" type="button">＋ 내용 추가</button></div></article>`;
+    const startDate = course.startDate || $('#planDate').value || '';
+    return `<article class="stacked-course ${courseIndex === activeCourseIndex ? 'active' : ''}" data-course="${courseIndex}" style="--course-bg:${palette.bg};--course-soft:${palette.soft}"><button type="button" class="course-accordion-head" data-toggle-course="${courseIndex}" aria-expanded="${courseIndex === activeCourseIndex}"><span class="course-accordion-number">${courseIndex + 1}</span><span class="course-accordion-summary"><strong class="course-accordion-name">${escapeHtml(course.title || '새 과목')}</strong><small>시작 ${startDate ? formatDate(startDate) : '미정'} · 마감 ${course.dueDate ? formatDate(course.dueDate) : '미정'}</small></span><span class="course-accordion-chip">${dueBadge}</span><span class="course-accordion-chip">할 일 ${taskCount}개</span><span class="course-accordion-chevron" aria-hidden="true"></span></button><div class="course-accordion-body"><div class="stacked-course-head"><input data-course-title="${courseIndex}" value="${escapeHtml(course.title)}" placeholder="과목 이름" aria-label="과목 이름"><label><span>시작일</span><input data-course-start="${courseIndex}" value="${escapeHtml(startDate)}" placeholder="날짜 선택" readonly aria-label="시작일"></label><label><span>마감일</span><input data-course-due="${courseIndex}" value="${escapeHtml(course.dueDate)}" placeholder="날짜 선택" readonly aria-label="마감일"></label></div><div class="focus-course-lines">${taskMarkup}</div><button class="add-focus-line" data-add-line="${courseIndex}" type="button">＋ 내용 추가</button></div></article>`;
   }).join('');
   const selectCourse = index => { activeCourseIndex = index; editor.querySelectorAll('.stacked-course').forEach((card, cardIndex) => { const active = cardIndex === index; card.classList.toggle('active', active); card.querySelector('.course-accordion-head')?.setAttribute('aria-expanded', String(active)); }); };
   editor.querySelectorAll('.stacked-course').forEach((card, index) => card.onclick = () => selectCourse(index));
   editor.querySelectorAll('[data-toggle-course]').forEach(button => button.onclick = event => { event.preventDefault(); event.stopPropagation(); selectCourse(Number(button.dataset.toggleCourse)); });
   editor.querySelectorAll('[data-course-title]').forEach(input => input.oninput = event => { const index = Number(event.target.dataset.courseTitle); courses[index].title = event.target.value; event.target.closest('.stacked-course')?.querySelector('.course-accordion-name')?.replaceChildren(event.target.value || '새 과목'); selectCourse(index); });
-  editor.querySelectorAll('[data-course-due]').forEach(input => { input.oninput = event => { const index = Number(event.target.dataset.courseDue); courses[index].dueDate = event.target.value; const summaryDate = event.target.closest('.stacked-course')?.querySelector('.course-accordion-summary small'); if (summaryDate) summaryDate.textContent = `마감 ${event.target.value ? formatDate(event.target.value) : '미정'}`; selectCourse(index); }; bindDatePicker(input); });
+  editor.querySelectorAll('[data-course-start]').forEach(input => { input.oninput = event => { const index = Number(event.target.dataset.courseStart); courses[index].startDate = event.target.value; const summaryDate = event.target.closest('.stacked-course')?.querySelector('.course-accordion-summary small'); if (summaryDate) summaryDate.textContent = `시작 ${event.target.value ? formatDate(event.target.value) : '미정'} · 마감 ${courses[index].dueDate ? formatDate(courses[index].dueDate) : '미정'}`; selectCourse(index); }; bindDatePicker(input); });
+  editor.querySelectorAll('[data-course-due]').forEach(input => { input.oninput = event => { const index = Number(event.target.dataset.courseDue); courses[index].dueDate = event.target.value; const summaryDate = event.target.closest('.stacked-course')?.querySelector('.course-accordion-summary small'); if (summaryDate) summaryDate.textContent = `시작 ${courses[index].startDate ? formatDate(courses[index].startDate) : '미정'} · 마감 ${event.target.value ? formatDate(event.target.value) : '미정'}`; selectCourse(index); }; bindDatePicker(input); });
   editor.querySelectorAll('[data-course-line]').forEach(input => input.oninput = event => { const index = Number(event.target.dataset.courseLine); const card = event.target.closest('.stacked-course'); courses[index].detail = [...card.querySelectorAll('[data-course-line]')].map(node => node.value).join('\n'); selectCourse(index); });
   editor.querySelectorAll('[data-remove-line]').forEach(button => button.onclick = event => { event.stopPropagation(); const [courseIndex, lineIndex] = button.dataset.removeLine.split(':').map(Number); const course = courses[courseIndex]; const values = String(course.detail || '').split(/\r?\n/); values.splice(lineIndex, 1); course.detail = values.join('\n'); activeCourseIndex = courseIndex; renderCourses(); });
   editor.querySelectorAll('[data-add-line]').forEach(button => button.onclick = event => { event.stopPropagation(); const index = Number(button.dataset.addLine); const course = courses[index]; course.detail = `${course.detail}${course.detail ? '\n' : ''}새 항목`; activeCourseIndex = index; renderCourses(); const card = editor.querySelector(`[data-course="${index}"]`); const inputs = card.querySelectorAll('[data-course-line]'); inputs[inputs.length - 1].focus(); inputs[inputs.length - 1].select(); });
@@ -236,6 +302,17 @@ function currentWeekRange() {
 }
 function allItems() { return Object.entries(savedPlans).flatMap(([date, plan]) => (plan.items || []).map((item, itemIndex) => ({ ...item, date, itemIndex, startDate: item.startDate || date }))).sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999')); }
 function renderChecklist() { const host = $('#checklistList'); const items = allItems(); host.innerHTML = ''; if (!items.length) { host.innerHTML = '<p class="muted">등록된 일정이 없습니다.</p>'; return; } items.forEach(item => { const itemLines = lines(item); const done = item.done || []; const remaining = itemLines.filter((_, index) => !done[index]).length; const dday = dayDiff(item.dueDate); const badge = dday === '' ? '' : dday < 0 ? '기한 지남' : dday === 0 ? 'D-day' : `D-${dday}`; const card = document.createElement('article'); card.className = 'check-course'; card.innerHTML = `<header><div><span class="course-dot"></span><strong>${escapeHtml(item.title)}</strong><small>시작일 ${formatDate(item.startDate)} · 마감 ${formatDate(item.dueDate)}</small></div><span class="deadline ${dday < 0 ? 'late' : ''}">${badge}</span></header><div class="check-lines">${itemLines.map((line, lineIndex) => `<label><input type="checkbox" data-date="${item.date}" data-item="${item.itemIndex}" data-line="${lineIndex}" ${done[lineIndex] ? 'checked' : ''}/><span>${escapeHtml(line)}</span></label>`).join('') || '<p class="muted">내용이 없습니다.</p>'}</div><footer>${itemLines.length - remaining}/${itemLines.length} 완료</footer>`; host.append(card); }); host.querySelectorAll('input[type=checkbox]').forEach(input => input.onchange = async () => { try { const result = await bridge.plan.toggleLine(input.dataset.date, Number(input.dataset.item), Number(input.dataset.line), input.checked); savedPlans = result.plans; renderChecklist(); renderGantt(); } catch (error) { setMessage(error.message, true); input.checked = !input.checked; } }); }
+function journeySlots(total, completed, maxSlots = 8) {
+  const capacity = Math.max(1, Math.min(8, maxSlots));
+  if (total <= capacity) return [
+    ...Array.from({ length: completed }, () => ({ type: 'done' })),
+    ...Array.from({ length: total - completed }, (_, index) => ({ type: 'todo', next: index === 0 }))
+  ];
+  const remaining = total - completed;
+  return remaining > 0
+    ? [{ type: 'more', count: remaining }]
+    : [{ type: 'done-group', count: completed }];
+}
 function renderGantt() {
   const host = $('#ganttChart');
   const monthValue = $('#ganttMonth').value || today.slice(0, 7);
@@ -257,15 +334,19 @@ function renderGantt() {
   const paletteByCourse = coursePaletteMap(items);
   $('#ganttCount').textContent = overviewScope === 'urgent' ? `3일 이내 · ${items.length}개` : `${items.length}개 일정`;
   if (!items.length) { host.innerHTML = `<p class="muted">${overviewScope === 'all' ? '이 달에 표시할 일정이 없습니다.' : '선택한 범위에 남은 일정이 없습니다.'}</p>`; return; }
+  const weekdayNames = ['일', '월', '화', '수', '목', '금', '토'];
   const axis = Array.from({ length: days }, (_, index) => {
     const value = `${monthValue}-${String(index + 1).padStart(2, '0')}`;
-    return `<th class="day-col ${value === today ? 'today-col' : ''}"><span>${index + 1}</span></th>`;
+    const weekday = new Date(year, month - 1, index + 1).getDay();
+    const weekendClass = weekday === 0 ? ' is-sunday' : weekday === 6 ? ' is-saturday' : '';
+    return `<th class="day-col${weekendClass}"><small>${weekdayNames[weekday]}</small><span>${index + 1}</span></th>`;
   }).join('');
-  const rows = items.map(item => {
+  const rows = items.map((item, itemIndex) => {
     const start = item.startDate || item.date;
     const end = item.dueDate || start;
     const startDay = Math.max(1, Math.floor((dateValue(start) - dateValue(first)) / 86400000) + 1);
     const endDay = Math.min(days, Math.floor((dateValue(end) - dateValue(first)) / 86400000) + 1);
+    const span = Math.max(1, endDay - startDay + 1);
     const dday = dayDiff(item.dueDate);
     const badge = dday === '' ? '' : dday < 0 ? '기한 지남' : dday === 0 ? 'D-day' : `D-${dday}`;
     const taskLines = lines(item);
@@ -273,25 +354,36 @@ function renderGantt() {
     const progress = taskLines.length ? Math.round((completed / taskLines.length) * 100) : 0;
     const key = courseKey(item.title, item.dueDate);
     const palette = paletteByCourse.get(String(item.title || '과목').trim()) || coursePalette(item.title);
-    let cells = `<td class="gantt-subject-col"><strong>${escapeHtml(item.title)}</strong><small>${formatDate(start)} → ${formatDate(end)} · ${progress}%</small></td>`;
+    const subjectInitial = String(item.title || '과목').trim().charAt(0).toUpperCase();
+    // 기간이 짧으면 돌을 작게 만들지 않고 시안처럼 완료/나머지 개수를 묶는다.
+    const routeCapacity = Math.max(1, Math.min(8, Math.floor(((span * 54) - 86) / 32)));
+    const slots = journeySlots(taskLines.length, completed, routeCapacity);
+    const stones = slots.map(slot => {
+      if (slot.type === 'done') return '<i class="gantt-stone is-done" aria-hidden="true"><svg viewBox="0 0 30 30"><polygon points="15,6.5 17.6,11.9 23.6,12.7 19.3,16.9 20.3,22.8 15,20 9.7,22.8 10.7,16.9 6.4,12.7 12.4,11.9"/></svg></i>';
+      if (slot.type === 'todo') return `<i class="gantt-stone${slot.next ? ' is-next' : ''}" aria-hidden="true"></i>`;
+      if (slot.type === 'done-group') return `<span class="gantt-count-chip is-done-group" aria-hidden="true"><svg viewBox="0 0 20 20"><polygon points="10,1.8 12.4,6.7 17.8,7.5 13.9,11.3 14.8,16.7 10,14.1 5.2,16.7 6.1,11.3 2.2,7.5 7.6,6.7"/></svg><span>×${slot.count}</span></span>`;
+      return `<span class="gantt-count-chip is-more" aria-hidden="true">+${slot.count}</span>`;
+    }).join('');
+    let cells = `<td class="gantt-subject-col"><span class="gantt-subject-badge" style="--course-bg:${palette.bg}">${escapeHtml(subjectInitial)}</span><span class="gantt-subject-copy"><strong>${escapeHtml(item.title)}</strong><small>할 일 ${completed}/${taskLines.length}</small></span></td>`;
     for (let day = 1; day <= days; day += 1) {
-      const todayClass = `${monthValue}-${String(day).padStart(2, '0')}` === today ? ' today-cell' : '';
-      if (day === startDay && endDay >= startDay) {
-        const span = endDay - startDay + 1;
-        const state = progress === 100 ? ' is-complete' : progress > 0 ? ' is-progress' : ' is-empty';
-        const compact = span <= 2;
-        cells += `<td colspan="${span}" class="gantt-cell${todayClass}"><button type="button" class="gantt-bar${state}${compact ? ' is-compact' : ''}" data-course-key="${escapeHtml(key)}" style="--course-bg:${palette.bg};--course-border:${palette.border};--course-soft:${palette.soft};--course-text:${palette.text};--progress:${progress}%" aria-label="${escapeHtml(item.title)} ${progress}% 완료, 진행 현황 보기"><i class="gantt-progress-fill" aria-hidden="true"></i>${compact ? '' : `<span>${escapeHtml(item.title)}</span>`}<span class="gantt-badges"><em>${progress}%</em>${!compact && badge ? `<b>${badge}</b>` : ''}</span></button></td>`;
+      if (day === startDay) {
+        cells += `<td colspan="${span}" class="gantt-cell gantt-path-cell"><div class="gantt-journey-path" role="button" tabindex="0" data-course-key="${escapeHtml(key)}" style="--course-bg:${palette.bg};--course-border:${palette.border};--course-soft:${palette.soft};--course-text:${palette.text}" aria-label="${escapeHtml(item.title)} ${completed}/${taskLines.length} 완료${badge ? `, ${badge}` : ''}, 진행 현황 보기">${dday < 0 && progress < 100 ? '<em class="gantt-overdue-chip">기한 지남</em>' : ''}<span class="gantt-start-dot" aria-hidden="true"></span><span class="gantt-path-line" aria-hidden="true"></span><span class="gantt-stones">${stones}</span><svg class="gantt-finish-flag" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V3"/><path d="M7 3.5h13l-3.5 5 3.5 5H7Z"/></svg></div></td>`;
         day += span - 1;
-      } else cells += `<td class="gantt-cell${todayClass}"></td>`;
+      } else cells += '<td class="gantt-cell"></td>';
     }
     return `<tr>${cells}</tr>`;
   }).join('');
-  const tableWidth = 170 + (days * 42);
+  const tableWidth = 200 + (days * 54);
   host.innerHTML = `<table class="gantt-table" style="width:${tableWidth}px;min-width:${tableWidth}px"><colgroup><col class="gantt-subject-column">${Array.from({ length: days }, () => '<col>').join('')}</colgroup><thead><tr><th class="gantt-subject-col">과목</th>${axis}</tr></thead><tbody>${rows}</tbody></table>`;
-  host.querySelectorAll('.gantt-bar').forEach(button => {
+  host.querySelectorAll('.gantt-journey-path').forEach(button => {
     button.onclick = () => {
       prepareProgressFocus(button.dataset.courseKey);
       showPage('progress');
+    };
+    button.onkeydown = event => {
+      if (!['Enter', ' '].includes(event.key)) return;
+      event.preventDefault();
+      button.click();
     };
   });
   if ($('#overviewPage').classList.contains('active')) scrollGanttToToday();
@@ -449,7 +541,7 @@ function scrollGanttToToday() {
       host.scrollLeft = 0;
       return;
     }
-    const subjectWidth = 170;
+    const subjectWidth = 200;
     const dateViewportWidth = Math.max(0, host.clientWidth - subjectWidth);
     const targetLeft = todayCell.offsetLeft - subjectWidth - Math.max(0, (dateViewportWidth - todayCell.offsetWidth) / 2);
     const maxLeft = Math.max(0, host.scrollWidth - host.clientWidth);
@@ -461,6 +553,47 @@ function scrollGanttToToday() {
     requestAnimationFrame(positionToday);
   });
 }
+function enableGanttScrolling() {
+  const host = $('#ganttChart');
+  if (!host || host.dataset.scrollControlsReady) return;
+  host.dataset.scrollControlsReady = 'true';
+  host.addEventListener('wheel', event => {
+    if (host.scrollWidth <= host.clientWidth) return;
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (!delta) return;
+    const maxLeft = host.scrollWidth - host.clientWidth;
+    const nextLeft = Math.max(0, Math.min(maxLeft, host.scrollLeft + delta));
+    if (nextLeft === host.scrollLeft) return;
+    event.preventDefault();
+    host.scrollLeft = nextLeft;
+  }, { passive: false });
+  host.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    event.preventDefault();
+    host.scrollBy({ left: event.key === 'ArrowLeft' ? -160 : 160, behavior: 'smooth' });
+  });
+  let drag = null;
+  host.addEventListener('pointerdown', event => {
+    // 징검다리는 클릭 이동이 우선이다. 빈 날짜 영역에서만 표를 끌어 스크롤한다.
+    if (event.button !== 0 || event.target.closest('button, .gantt-journey-path')) return;
+    drag = { pointerId: event.pointerId, x: event.clientX, left: host.scrollLeft };
+    host.setPointerCapture(event.pointerId);
+    host.classList.add('is-dragging');
+  });
+  host.addEventListener('pointermove', event => {
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    host.scrollLeft = drag.left - (event.clientX - drag.x);
+  });
+  const stopDragging = event => {
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (host.hasPointerCapture(event.pointerId)) host.releasePointerCapture(event.pointerId);
+    drag = null;
+    host.classList.remove('is-dragging');
+  };
+  host.addEventListener('pointerup', stopDragging);
+  host.addEventListener('pointercancel', stopDragging);
+}
+enableGanttScrolling();
 function showPage(page, { record = true } = {}) {
   const currentPage = document.querySelector('.nav-item.active')?.dataset.page;
   if (record && page !== currentPage) {
@@ -733,7 +866,7 @@ function renderChecklist() {
     card.style.setProperty('--course-bg', palette.bg); card.style.setProperty('--course-border', palette.border); card.style.setProperty('--course-soft', palette.soft); card.style.setProperty('--course-text', palette.text);
     card.innerHTML = editing
       ? `<div class="inline-course-editor"><div class="inline-editor-title"><strong>${escapeHtml(course.title)}</strong><small>할 일 내용 편집</small></div><div class="inline-course-tasks">${inlineCourseDraft.tasks.map((task, index) => `<div><span>${String(index + 1).padStart(2, '0')}</span><input data-inline-task="${index}" value="${escapeHtml(task.text)}"><button type="button" data-inline-remove="${index}" aria-label="내용 삭제">삭제</button></div>`).join('')}</div><button type="button" class="inline-add-task">＋ 내용 추가</button><div class="inline-editor-actions"><button type="button" class="inline-cancel">취소</button><button type="button" class="inline-save">수정 저장</button></div></div>`
-      : `<header><div><span class="course-dot"></span><strong>${escapeHtml(course.title)}</strong><small>시작 ${formatDate(course.startDate)} · 마감 ${formatDate(course.dueDate)}</small></div><div class="action-course-meta"><span class="task-deadline">${dueLabel}</span><div class="schedule-actions"><button type="button" class="schedule-more" aria-label="일정 메뉴" aria-expanded="false">•••</button><div class="schedule-menu"><button type="button" data-edit-schedule><img src="./icons/icon-edit.svg" alt="">일정 수정</button><span class="schedule-menu-separator" aria-hidden="true"></span><button type="button" data-delete-schedule><img src="./icons/icon-delete.svg" alt="">일정 삭제</button></div></div></div></header><div class="action-course-tasks">${course.tasks.map(task => { const goal = !task.done && task.item.goalDates?.[task.lineIndex] === today; const key = todayGoalKey(task); return `<div class="action-course-line ${task.done ? 'done' : ''}"><label class="action-task-check" aria-label="${task.done ? '완료 취소' : '완료'}"><input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span></label>${task.done ? `<span class="action-line-text">${escapeHtml(task.text)}</span>` : `<button type="button" class="today-goal-text ${goal ? 'is-goal' : ''}" data-goal-key="${escapeHtml(key)}" aria-pressed="${goal}" aria-label="${escapeHtml(task.text)}: ${goal ? '오늘 목표 해제' : '오늘 목표로 지정'}" data-tooltip="${goal ? '오늘 목표예요' : '눌러서 오늘 목표로 지정'}"><span>${escapeHtml(task.text)}</span></button>`}</div>`; }).join('')}</div><footer>${todayGoalCount ? `<span class="today-goal-chip">${todayGoalChipSvg}오늘 목표 ${todayGoalCount}</span>` : ''}<span class="course-progress-summary">${hideCompleted ? `${course.tasks.filter(task => !task.done).length}개 남음` : `${course.tasks.filter(task => task.done).length}/${course.tasks.length} 완료`}</span></footer>`;
+      : `<header><div><span class="course-dot"></span><strong>${escapeHtml(course.title)}</strong><small>시작 ${formatDate(course.startDate)} · 마감 ${formatDate(course.dueDate)}</small></div><div class="action-course-meta"><span class="task-deadline">${dueLabel}</span><div class="schedule-actions"><button type="button" class="schedule-more" aria-label="일정 메뉴" aria-expanded="false">•••</button><div class="schedule-menu"><button type="button" data-edit-schedule><img src="./icons/icon-edit.svg" alt="">일정 수정</button><span class="schedule-menu-separator" aria-hidden="true"></span><button type="button" data-delete-schedule><img src="./icons/icon-delete.svg" alt="">일정 삭제</button></div></div></div></header><div class="action-course-tasks">${dividerIconButton(course.key, 'top')}${course.tasks.map(task => { const goal = !task.done && task.item.goalDates?.[task.lineIndex] === today; const key = todayGoalKey(task); return `<div class="action-course-line ${task.done ? 'done' : ''}"><label class="action-task-check" aria-label="${task.done ? '완료 취소' : '완료'}"><input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span></label>${task.done ? `<span class="action-line-text">${escapeHtml(task.text)}</span>` : `<button type="button" class="today-goal-text ${goal ? 'is-goal' : ''}" data-goal-key="${escapeHtml(key)}" aria-pressed="${goal}" aria-label="${escapeHtml(task.text)}: ${goal ? '오늘 목표 해제' : '오늘 목표로 지정'}" data-tooltip="${goal ? '오늘 목표예요' : '눌러서 오늘 목표로 지정'}"><span>${escapeHtml(task.text)}</span></button>`}</div>`; }).join('')}</div><footer>${dividerIconButton(course.key, 'bottom')}${todayGoalCount ? `<span class="today-goal-chip">${todayGoalChipSvg}오늘 목표 ${todayGoalCount}</span>` : ''}<span class="course-progress-summary">${hideCompleted ? `${course.tasks.filter(task => !task.done).length}개 남음` : `${course.tasks.filter(task => task.done).length}/${course.tasks.length} 완료`}</span></footer>`;
     const wrapper = document.createElement('div');
     wrapper.className = 'spot-wrap';
     wrapper.dataset.scheduleId = course.key;
@@ -763,6 +896,25 @@ function renderChecklist() {
         } catch (error) {
           setMessage(error.message, true);
           button.disabled = false;
+        }
+      };
+    });
+    card.querySelectorAll('.course-divider-icon').forEach(button => {
+      button.onclick = event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const stateKey = button.dataset.dividerKey;
+        const current = courseDividerIcons.get(stateKey) || 'star';
+        const next = randomDividerIcon(current);
+        const positionName = button.dataset.dividerPosition === 'top' ? '위쪽' : '아래쪽';
+        courseDividerIcons.set(stateKey, next);
+        button.dataset.dividerIcon = next;
+        button.setAttribute('aria-label', `${positionName} 카드 장식 바꾸기, 현재 ${dividerIconNames[next]}`);
+        button.querySelector('img').src = `./icons/divider-${next}.svg?v=2`;
+        button.classList.remove('is-rainbow');
+        if (next === 'rainbow') {
+          playRainbowChime();
+          requestAnimationFrame(() => button.classList.add('is-rainbow'));
         }
       };
     });
