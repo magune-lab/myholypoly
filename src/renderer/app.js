@@ -333,11 +333,13 @@ function renderGantt() {
   $('#ganttCount').textContent = overviewScope === 'urgent' ? `3일 이내 · ${items.length}개` : `${items.length}개 일정`;
   if (!items.length) { host.innerHTML = `<p class="muted">${overviewScope === 'all' ? '이 달에 표시할 일정이 없습니다.' : '선택한 범위에 남은 일정이 없습니다.'}</p>`; return; }
   const weekdayNames = ['일', '월', '화', '수', '목', '금', '토'];
+  const todayDay = today.startsWith(`${monthValue}-`) ? Number(today.slice(8, 10)) : 0;
   const axis = Array.from({ length: days }, (_, index) => {
     const value = `${monthValue}-${String(index + 1).padStart(2, '0')}`;
     const weekday = new Date(year, month - 1, index + 1).getDay();
     const weekendClass = weekday === 0 ? ' is-sunday' : weekday === 6 ? ' is-saturday' : '';
-    return `<th class="day-col${weekendClass}"><small>${weekdayNames[weekday]}</small><span>${index + 1}</span></th>`;
+    const todayClass = value === today ? ' today-col' : '';
+    return `<th class="day-col${weekendClass}${todayClass}"><small>${weekdayNames[weekday]}</small><span>${index + 1}</span></th>`;
   }).join('');
   const rows = items.map((item, itemIndex) => {
     const start = item.startDate || item.date;
@@ -365,9 +367,11 @@ function renderGantt() {
     let cells = `<td class="gantt-subject-col"><span class="gantt-subject-badge" style="--course-bg:${palette.bg}">${escapeHtml(subjectInitial)}</span><span class="gantt-subject-copy"><strong>${escapeHtml(item.title)}</strong><small>할 일 ${completed}/${taskLines.length}</small></span></td>`;
     for (let day = 1; day <= days; day += 1) {
       if (day === startDay) {
-        cells += `<td colspan="${span}" class="gantt-cell gantt-path-cell"><div class="gantt-journey-path" role="button" tabindex="0" data-course-key="${escapeHtml(key)}" style="--course-bg:${palette.bg};--course-border:${palette.border};--course-soft:${palette.soft};--course-text:${palette.text}" aria-label="${escapeHtml(item.title)} ${completed}/${taskLines.length} 완료${badge ? `, ${badge}` : ''}, 진행 현황 보기">${dday < 0 && progress < 100 ? '<em class="gantt-overdue-chip">기한 지남</em>' : ''}<span class="gantt-start-dot" aria-hidden="true"></span><span class="gantt-path-line" aria-hidden="true"></span><span class="gantt-stones">${stones}</span><svg class="gantt-finish-flag" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V3"/><path d="M7 3.5h13l-3.5 5 3.5 5H7Z"/></svg></div></td>`;
+        const containsToday = todayDay >= startDay && todayDay <= endDay;
+        const todayBand = containsToday ? `<span class="gantt-today-band" style="--today-offset:${todayDay - startDay};--span:${span}" aria-hidden="true"></span>` : '';
+        cells += `<td colspan="${span}" class="gantt-cell gantt-path-cell${containsToday ? ' contains-today' : ''}">${todayBand}<div class="gantt-journey-path" role="button" tabindex="0" data-course-key="${escapeHtml(key)}" style="--course-bg:${palette.bg};--course-border:${palette.border};--course-soft:${palette.soft};--course-text:${palette.text}" aria-label="${escapeHtml(item.title)} ${completed}/${taskLines.length} 완료${badge ? `, ${badge}` : ''}, 진행 현황 보기">${dday < 0 && progress < 100 ? '<em class="gantt-overdue-chip">기한 지남</em>' : ''}<span class="gantt-start-dot" aria-hidden="true"></span><span class="gantt-path-line" aria-hidden="true"></span><span class="gantt-stones">${stones}</span><svg class="gantt-finish-flag" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V3"/><path d="M7 3.5h13l-3.5 5 3.5 5H7Z"/></svg></div></td>`;
         day += span - 1;
-      } else cells += '<td class="gantt-cell"></td>';
+      } else cells += `<td class="gantt-cell${day === todayDay ? ' contains-today' : ''}">${day === todayDay ? '<span class="gantt-today-band" aria-hidden="true"></span>' : ''}</td>`;
     }
     return `<tr>${cells}</tr>`;
   }).join('');
@@ -539,9 +543,10 @@ function scrollGanttToToday() {
       host.scrollLeft = 0;
       return;
     }
-    const subjectWidth = 200;
-    const dateViewportWidth = Math.max(0, host.clientWidth - subjectWidth);
-    const targetLeft = todayCell.offsetLeft - subjectWidth - Math.max(0, (dateViewportWidth - todayCell.offsetWidth) / 2);
+    const hostRect = host.getBoundingClientRect();
+    const todayRect = todayCell.getBoundingClientRect();
+    const todayRightInContent = todayRect.right - hostRect.left + host.scrollLeft;
+    const targetLeft = todayRightInContent - host.clientWidth;
     const maxLeft = Math.max(0, host.scrollWidth - host.clientWidth);
     host.scrollLeft = Math.min(maxLeft, Math.max(0, targetLeft));
   };
@@ -555,16 +560,6 @@ function enableGanttScrolling() {
   const host = $('#ganttChart');
   if (!host || host.dataset.scrollControlsReady) return;
   host.dataset.scrollControlsReady = 'true';
-  host.addEventListener('wheel', event => {
-    if (host.scrollWidth <= host.clientWidth) return;
-    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-    if (!delta) return;
-    const maxLeft = host.scrollWidth - host.clientWidth;
-    const nextLeft = Math.max(0, Math.min(maxLeft, host.scrollLeft + delta));
-    if (nextLeft === host.scrollLeft) return;
-    event.preventDefault();
-    host.scrollLeft = nextLeft;
-  }, { passive: false });
   host.addEventListener('keydown', event => {
     if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
     event.preventDefault();
@@ -592,6 +587,12 @@ function enableGanttScrolling() {
   host.addEventListener('pointercancel', stopDragging);
 }
 enableGanttScrolling();
+let ganttCenterFrame = 0;
+new ResizeObserver(() => {
+  if (!$('#overviewPage').classList.contains('active')) return;
+  cancelAnimationFrame(ganttCenterFrame);
+  ganttCenterFrame = requestAnimationFrame(scrollGanttToToday);
+}).observe($('#ganttChart'));
 function showPage(page, { record = true } = {}) {
   const currentPage = document.querySelector('.nav-item.active')?.dataset.page;
   if (record && page !== currentPage) {
