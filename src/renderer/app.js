@@ -120,12 +120,8 @@ function prepareProgressFocus(key) {
   if (!key) return;
   selectedCourseKey = key;
   focusId = key;
-  overviewScope = 'all';
-  progressScope = 'all';
   hideCompleted = false;
-  localStorage.setItem(scopeStorageKey, 'all');
   localStorage.setItem(hideCompletedStorageKey, 'false');
-  syncScopeTabs();
   syncHideCompleted();
 }
 let pageHistory = ['overview'];
