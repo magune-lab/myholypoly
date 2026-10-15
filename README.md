@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/myholypoly.png" width="160" alt="myholypoly 아이콘">
+</p>
+
 # myholypoly
 
 e-POLY 앱 또는 POLY 웹에서 숙제를 불러와 일정과 체크리스트로 관리하는 비공식 Windows 보조 앱입니다.
