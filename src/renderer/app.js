@@ -2,12 +2,118 @@ const $ = selector => document.querySelector(selector);
 const now = new Date();
 const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
 const bridge = window.myholypoly;
-bridge.appInfo.read().then(({ version }) => {
-  $('#appVersion').textContent = `v${version}`;
-  $('#settingsAppVersion').textContent = `v${version}`;
-}).catch(() => {});
-bridge.appInfo.checkUpdate().then(({ available }) => { $('#appUpdateBadge').hidden = !available; }).catch(() => {});
+let updateInfo = null;
+let updateBusy = false;
+let appIsPackaged = true;
+function updateSizeLabel(bytes) { return bytes ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : ''; }
+function updateDateLabel(value) { return value ? new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(value)) : ''; }
+function fillUpdateDialog(info) {
+  updateInfo = info;
+  $('#updateCurrentVersion').textContent = `v${info.currentVersion}`;
+  $('#updateLatestVersion').textContent = `v${info.latestVersion}`;
+  const releases = Array.isArray(info.releases) && info.releases.length ? info.releases : [{ version: info.latestVersion, notes: info.notes, publishedAt: info.publishedAt }];
+  $('#updateVersionSummary').textContent = releases.length > 1 ? `${releases.length}개 버전의 업데이트가 모였어요` : '새로운 기능과 개선이 도착했어요';
+  $('#updatePublishedAt').textContent = updateDateLabel(info.publishedAt);
+  $('#updateSize').textContent = updateSizeLabel(info.size);
+  const notesHost = $('#updateNotes');
+  notesHost.replaceChildren();
+  releases.forEach(release => {
+    const section = document.createElement('section');
+    const heading = document.createElement('h3');
+    heading.textContent = `v${release.version}`;
+    section.append(heading);
+    const notes = String(release.notes || '').split(/\r?\n/).map(line => line.replace(/^\s*[-*#]+\s*/, '').trim()).filter(Boolean).slice(0, 5);
+    (notes.length ? notes : ['기능과 안정성을 개선했어요.']).forEach(line => { const item = document.createElement('p'); item.textContent = line; section.append(item); });
+    notesHost.append(section);
+  });
+  $('#updateProgressArea').hidden = true;
+  $('#updateError').hidden = true;
+  $('#updateDialog').hidden = false;
+}
+async function checkForUpdates({ openWhenCurrent = false, openWhenAvailable = false } = {}) {
+  const checkButton = $('#checkForUpdates');
+  checkButton.disabled = true;
+  $('#updateCheckMessage').textContent = '새 버전을 확인하고 있어요';
+  try {
+    const info = await bridge.appInfo.checkUpdate();
+    updateInfo = info;
+    $('#appUpdateBadge').hidden = !info.available;
+    $('#updateCheckMessage').textContent = info.error ? '업데이트 확인에 실패했어요' : info.available ? `v${info.latestVersion} 업데이트가 있어요` : '최신 버전을 사용하고 있어요';
+    if (info.available && openWhenAvailable) fillUpdateDialog(info);
+    else if (openWhenCurrent) $('#updateCheckMessage').textContent = info.error || '최신 버전을 사용하고 있어요';
+    return info;
+  } catch (error) {
+    $('#updateCheckMessage').textContent = '업데이트 확인에 실패했어요';
+    return { available: false, error: error.message };
+  } finally { checkButton.disabled = false; }
+}
+async function initializeUpdate() {
+  try {
+    const { version, packaged } = await bridge.appInfo.read();
+    appIsPackaged = packaged;
+    $('#appVersion').textContent = `v${version}`;
+    $('#settingsAppVersion').textContent = `v${version}`;
+    $('#previewUpdate').hidden = packaged;
+    if (packaged) await checkForUpdates();
+    else {
+      updateInfo = await bridge.appInfo.previewUpdate();
+      $('#appUpdateBadge').hidden = false;
+      $('#updateCheckMessage').textContent = `테스트용 v${updateInfo.latestVersion} 업데이트가 있어요`;
+    }
+  } catch { $('#updateCheckMessage').textContent = '업데이트 확인에 실패했어요'; }
+}
+initializeUpdate();
 $('#openGithubRepository').onclick = event => { event.preventDefault(); bridge.appInfo.openRepository(); };
+$('#appUpdateBadge').onclick = () => updateInfo?.available ? fillUpdateDialog(updateInfo) : checkForUpdates({ openWhenCurrent: true, openWhenAvailable: true });
+$('#checkForUpdates').onclick = async () => {
+  if (appIsPackaged) return checkForUpdates({ openWhenCurrent: true, openWhenAvailable: true });
+  updateInfo = await bridge.appInfo.previewUpdate();
+  $('#appUpdateBadge').hidden = false;
+  fillUpdateDialog(updateInfo);
+};
+$('#previewUpdate').onclick = async () => {
+  $('#previewUpdate').disabled = true;
+  try { fillUpdateDialog(await bridge.appInfo.previewUpdate()); }
+  catch (error) { $('#updateCheckMessage').textContent = error.message; }
+  finally { $('#previewUpdate').disabled = false; }
+};
+function closeUpdateDialog() { if (!updateBusy) $('#updateDialog').hidden = true; }
+$('#closeUpdateDialog').onclick = closeUpdateDialog;
+$('#postponeUpdate').onclick = closeUpdateDialog;
+$('#updateDialog').onclick = event => { if (event.target === $('#updateDialog')) closeUpdateDialog(); };
+const stopUpdateProgress = bridge.appInfo.onUpdateProgress(progress => {
+  $('#updateProgressArea').hidden = false;
+  const labels = { downloading: '업데이트 파일을 받는 중이에요', verifying: '파일을 안전하게 확인하고 있어요', launching: 'Windows 설치 화면을 여는 중이에요' };
+  $('#updateProgressLabel').textContent = labels[progress.phase] || '업데이트를 준비하고 있어요';
+  $('#updateProgressPercent').textContent = `${progress.percent || 0}%`;
+  $('#updateProgressBar').style.width = `${progress.percent || 0}%`;
+});
+window.addEventListener('beforeunload', stopUpdateProgress);
+$('#installUpdate').onclick = async () => {
+  if (updateBusy) return;
+  updateBusy = true;
+  $('#installUpdate').disabled = true;
+  $('#postponeUpdate').disabled = true;
+  $('#closeUpdateDialog').disabled = true;
+  $('#updateError').hidden = true;
+  $('#updateProgressArea').hidden = false;
+  try {
+    const result = updateInfo?.test ? await bridge.appInfo.simulateUpdate() : await bridge.appInfo.downloadUpdate();
+    if (!result.installed) throw new Error('이미 최신 버전을 사용하고 있어요.');
+    $('#updateProgressLabel').textContent = result.test ? '테스트가 완료됐어요. 실제 파일은 설치하지 않았어요' : 'Windows 설치 화면에서 업데이트를 완료해 주세요';
+    $('#updateProgressPercent').textContent = '완료';
+  } catch (error) {
+    $('#updateError').textContent = error.message;
+    $('#updateError').hidden = false;
+    $('#updateProgressArea').hidden = true;
+    $('#installUpdate').textContent = '다시 시도';
+  } finally {
+    updateBusy = false;
+    $('#installUpdate').disabled = false;
+    $('#postponeUpdate').disabled = false;
+    $('#closeUpdateDialog').disabled = false;
+  }
+};
 const desktopShortcutToggle = $('#desktopShortcutToggle');
 const desktopShortcutMessage = $('#desktopShortcutMessage');
 async function refreshDesktopShortcut() {

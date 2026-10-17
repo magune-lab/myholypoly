@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron';
 import { access, mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import { captureHomeworkByDate, captureOpenHomework, captureTodayHomework, getEpolyStatus, launchEpoly, openCalendar } from './services/epoly.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -17,12 +18,131 @@ const blankPlan = { version: 1, plans: {} };
 const blankMonthlyEvents = { version: 1, events: [] };
 const epolyInstallGuideUrl = 'https://www.youtube.com/watch?v=g7CY3u4QoWU';
 const githubRepositoryUrl = 'https://github.com/magune-lab/myholypoly';
+const githubLatestReleaseApi = 'https://api.github.com/repos/magune-lab/myholypoly/releases/latest';
+const githubReleasesApi = 'https://api.github.com/repos/magune-lab/myholypoly/releases?per_page=30';
 const desktopShortcutPath = () => join(app.getPath('desktop'), 'myholypoly.lnk');
 const retiredSettingsFiles = ['gemini-api-key.bin', 'ai-organizing-rules.txt'];
 const polyWebLoginUrl = 'https://www.poly-english.com/member/login.do';
 let polyWebWindow = null;
 let mainWindow = null;
 let appQuitting = false;
+
+function isNewerVersion(latestVersion, currentVersion = app.getVersion()) {
+  const latest = String(latestVersion).replace(/^v/i, '').split('.').map(Number);
+  const current = String(currentVersion).replace(/^v/i, '').split('.').map(Number);
+  for (let index = 0; index < Math.max(latest.length, current.length); index += 1) {
+    if ((latest[index] || 0) !== (current[index] || 0)) return (latest[index] || 0) > (current[index] || 0);
+  }
+  return false;
+}
+async function latestRelease() {
+  const response = await fetch(githubLatestReleaseApi, {
+    headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'myholypoly-desktop' },
+    signal: AbortSignal.timeout(8000)
+  });
+  if (!response.ok) throw new Error('업데이트 정보를 가져오지 못했습니다.');
+  return response.json();
+}
+async function releasesSinceCurrent() {
+  const response = await fetch(githubReleasesApi, {
+    headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'myholypoly-desktop' },
+    signal: AbortSignal.timeout(8000)
+  });
+  if (!response.ok) throw new Error('업데이트 내역을 가져오지 못했습니다.');
+  const releases = await response.json();
+  return releases.filter(release => !release.draft && !release.prerelease && isNewerVersion(String(release.tag_name || '').replace(/^v/i, '')));
+}
+function publicReleaseInfo(release, releases = [release]) {
+  const latestVersion = String(release.tag_name || '').replace(/^v/i, '');
+  const installer = (release.assets || []).find(asset => /\.appx$/i.test(asset.name));
+  return {
+    available: isNewerVersion(latestVersion),
+    currentVersion: app.getVersion(),
+    latestVersion,
+    name: release.name || `myholypoly v${latestVersion}`,
+    notes: String(release.body || '').trim(),
+    publishedAt: release.published_at || '',
+    size: Number(installer?.size || 0),
+    releaseUrl: release.html_url || githubRepositoryUrl,
+    releases: releases.map(item => ({ version: String(item.tag_name || '').replace(/^v/i, ''), notes: String(item.body || '').trim(), publishedAt: item.published_at || '' }))
+  };
+}
+function nextPatchVersion(version = app.getVersion()) {
+  const parts = String(version).split('.').map(Number);
+  while (parts.length < 3) parts.push(0);
+  parts[2] += 1;
+  return parts.slice(0, 3).join('.');
+}
+async function previewUpdateInfo() {
+  let release = null;
+  try { release = await latestRelease(); } catch {}
+  return {
+    available: true,
+    test: true,
+    currentVersion: app.getVersion(),
+    latestVersion: (() => { const parts = app.getVersion().split('.').map(Number); parts[2] += 3; return parts.join('.'); })(),
+    name: '업데이트 화면 테스트',
+    notes: '좁은 일정의 완료 표시를 개선했어요.\n업데이트 내용을 앱 안에서 확인할 수 있어요.\n다운로드와 파일 검증 진행 상태를 더 분명하게 보여줘요.',
+    publishedAt: new Date().toISOString(),
+    size: Number((release?.assets || []).find(asset => /\.appx$/i.test(asset.name))?.size || 164000000),
+    releaseUrl: release?.html_url || `${githubRepositoryUrl}/releases/latest`,
+    releases: [1, 2, 3].map(offset => {
+      const parts = app.getVersion().split('.').map(Number); parts[2] += offset;
+      return { version: parts.join('.'), publishedAt: new Date(Date.now() + offset * 86400000).toISOString(), notes: [
+        '숙제 화면을 더 알아보기 쉽게 다듬었어요.',
+        offset === 2 ? '업데이트 알림과 설치 과정을 개선했어요.' : '작은 오류를 고치고 안정성을 높였어요.'
+      ].join('\n') };
+    }).reverse()
+  };
+}
+async function simulateUpdate(event) {
+  for (const percent of [4, 12, 24, 39, 55, 71, 86, 100]) {
+    await new Promise(resolve => setTimeout(resolve, 150));
+    event.sender.send('app:update-progress', { phase: 'downloading', percent, received: percent, total: 100 });
+  }
+  await new Promise(resolve => setTimeout(resolve, 450));
+  event.sender.send('app:update-progress', { phase: 'verifying', percent: 100 });
+  await new Promise(resolve => setTimeout(resolve, 550));
+  event.sender.send('app:update-progress', { phase: 'launching', percent: 100, test: true });
+  return { installed: true, test: true };
+}
+async function downloadUpdate(event) {
+  const release = await latestRelease();
+  const info = publicReleaseInfo(release);
+  if (!info.available) return { installed: false, reason: 'up-to-date', ...info };
+  const installer = (release.assets || []).find(asset => /\.appx$/i.test(asset.name));
+  const checksum = (release.assets || []).find(asset => asset.name === 'SHA256SUMS.txt');
+  if (!installer || !checksum) throw new Error('업데이트 설치 파일을 찾지 못했습니다.');
+  const response = await fetch(installer.browser_download_url, { signal: AbortSignal.timeout(180000) });
+  if (!response.ok || !response.body) throw new Error('업데이트 파일 다운로드에 실패했습니다.');
+  const total = Number(response.headers.get('content-length') || installer.size || 0);
+  const reader = response.body.getReader();
+  const chunks = [];
+  let received = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.byteLength;
+    event.sender.send('app:update-progress', { phase: 'downloading', received, total, percent: total ? Math.round(received / total * 100) : 0 });
+  }
+  event.sender.send('app:update-progress', { phase: 'verifying', percent: 100 });
+  const bytes = Buffer.concat(chunks.map(chunk => Buffer.from(chunk)));
+  const checksumResponse = await fetch(checksum.browser_download_url, { signal: AbortSignal.timeout(15000) });
+  if (!checksumResponse.ok) throw new Error('업데이트 파일 검증 정보를 가져오지 못했습니다.');
+  const checksumText = await checksumResponse.text();
+  const expected = checksumText.split(/\r?\n/).map(line => line.trim().split(/\s+/)).find(parts => parts.at(-1) === installer.name)?.[0]?.toLowerCase();
+  const actual = createHash('sha256').update(bytes).digest('hex');
+  if (!expected || actual !== expected) throw new Error('업데이트 파일 검증에 실패했습니다. 다시 시도해 주세요.');
+  const updateDirectory = join(app.getPath('temp'), 'myholypoly-update');
+  await mkdir(updateDirectory, { recursive: true });
+  const installerPath = join(updateDirectory, installer.name);
+  await writeFile(installerPath, bytes);
+  event.sender.send('app:update-progress', { phase: 'launching', percent: 100 });
+  const openError = await shell.openPath(installerPath);
+  if (openError) throw new Error(`Windows 설치 화면을 열지 못했습니다. ${openError}`);
+  return { installed: true, installerPath, ...info };
+}
 
 async function readPlan() {
   try { return JSON.parse(await readFile(planFile(), 'utf8')); }
@@ -222,23 +342,19 @@ app.whenReady().then(async () => {
     if (window.isMaximized()) window.unmaximize(); else window.maximize();
     return window.isMaximized();
   });
-  ipcMain.handle('app:info', () => ({ version: app.getVersion() }));
+  ipcMain.handle('app:info', () => ({ version: app.getVersion(), packaged: app.isPackaged }));
   ipcMain.handle('app:check-update', async () => {
     try {
-      const response = await fetch('https://api.github.com/repos/magune-lab/myholypoly/releases/latest', {
-        headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'myholypoly-desktop' },
-        signal: AbortSignal.timeout(4500)
-      });
-      if (!response.ok) return { available: false };
-      const release = await response.json();
-      const latestVersion = String(release.tag_name || '').replace(/^v/i, '');
-      const current = app.getVersion().split('.').map(Number);
-      const latest = latestVersion.split('.').map(Number);
-      const available = [0, 1, 2].some(index => (latest[index] || 0) !== (current[index] || 0) && (latest[index] || 0) > (current[index] || 0) && latest.slice(0, index).every((part, prior) => (part || 0) === (current[prior] || 0)));
-      return { available, latestVersion };
-    } catch { return { available: false }; }
+      const releases = await releasesSinceCurrent();
+      const release = releases[0] || await latestRelease();
+      return publicReleaseInfo(release, releases.length ? releases : [release]);
+    }
+    catch (error) { return { available: false, currentVersion: app.getVersion(), error: error.message }; }
   });
-  ipcMain.handle('app:open-repository', () => shell.openExternal(githubRepositoryUrl));
+  ipcMain.handle('app:download-update', event => downloadUpdate(event));
+  ipcMain.handle('app:preview-update', () => previewUpdateInfo());
+  ipcMain.handle('app:simulate-update', event => simulateUpdate(event));
+  ipcMain.handle('app:open-repository', () => shell.openExternal(`${githubRepositoryUrl}/releases/latest`));
   ipcMain.handle('app:desktop-shortcut-status', async () => ({ enabled: await desktopShortcutExists() }));
   ipcMain.handle('app:set-desktop-shortcut', (_event, enabled) => setDesktopShortcut(Boolean(enabled)));
   ipcMain.handle('epoly:status', () => getEpolyStatus());

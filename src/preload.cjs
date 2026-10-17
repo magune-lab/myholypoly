@@ -4,6 +4,14 @@ contextBridge.exposeInMainWorld('myholypoly', {
   appInfo: {
     read: () => ipcRenderer.invoke('app:info'),
     checkUpdate: () => ipcRenderer.invoke('app:check-update'),
+    downloadUpdate: () => ipcRenderer.invoke('app:download-update'),
+    previewUpdate: () => ipcRenderer.invoke('app:preview-update'),
+    simulateUpdate: () => ipcRenderer.invoke('app:simulate-update'),
+    onUpdateProgress: listener => {
+      const handler = (_event, progress) => listener(progress);
+      ipcRenderer.on('app:update-progress', handler);
+      return () => ipcRenderer.removeListener('app:update-progress', handler);
+    },
     openRepository: () => ipcRenderer.invoke('app:open-repository'),
     desktopShortcutStatus: () => ipcRenderer.invoke('app:desktop-shortcut-status'),
     setDesktopShortcut: enabled => ipcRenderer.invoke('app:set-desktop-shortcut', enabled)
