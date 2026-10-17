@@ -2,7 +2,11 @@ const $ = selector => document.querySelector(selector);
 const now = new Date();
 const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
 const bridge = window.myholypoly;
-bridge.appInfo.read().then(({ version }) => { $('#appVersion').textContent = `v${version}`; }).catch(() => {});
+bridge.appInfo.read().then(({ version }) => {
+  $('#appVersion').textContent = `v${version}`;
+  $('#settingsAppVersion').textContent = `v${version}`;
+}).catch(() => {});
+bridge.appInfo.checkUpdate().then(({ available }) => { $('#appUpdateBadge').hidden = !available; }).catch(() => {});
 $('#openGithubRepository').onclick = event => { event.preventDefault(); bridge.appInfo.openRepository(); };
 const desktopShortcutToggle = $('#desktopShortcutToggle');
 const desktopShortcutMessage = $('#desktopShortcutMessage');
@@ -174,6 +178,10 @@ function isoDate(year, month, day) { return `${year}-${String(month + 1).padStar
 function homeworkMonths(year) {
   return new Set(allItems().flatMap(item => [item.startDate || item.date, item.dueDate]).filter(Boolean).filter(value => Number(value.slice(0, 4)) === year).map(value => Number(value.slice(5, 7))));
 }
+function monthlyEventMonths(year) {
+  return new Set(monthlyEvents.flatMap(item => { const start = item.startDate || item.date; return [start, item.endDate || start]; }).filter(Boolean).filter(value => Number(value.slice(0, 4)) === year).map(value => Number(value.slice(5, 7))));
+}
+function isMonthlyDatePicker() { return activeDateInput?.id === 'monthlyEventStartDate' || activeDateInput?.id === 'monthlyEventEndDate'; }
 function renderDatePicker() {
   const selectingMonth = datePickerStage === 'months';
   $('#datePickerHeading').textContent = selectingMonth ? `${pickerYear}년` : `${pickerYear}년 ${pickerMonth + 1}월`;
@@ -181,7 +189,7 @@ function renderDatePicker() {
   $('#datePickerBackToMonths').hidden = selectingMonth;
   $('.date-picker-week').hidden = selectingMonth;
   $('#datePickerDays').hidden = selectingMonth;
-  const markedMonths = homeworkMonths(pickerYear);
+  const markedMonths = isMonthlyDatePicker() ? monthlyEventMonths(pickerYear) : homeworkMonths(pickerYear);
   $('#datePickerMonths').innerHTML = Array.from({ length: 12 }, (_, index) => {
     const month = index + 1;
     const selected = pickerMonth === index;
@@ -204,7 +212,9 @@ function renderDatePicker() {
     if (month < 0) { month = 11; year -= 1; }
     if (month > 11) { month = 0; year += 1; }
     const value = isoDate(year, month, day);
-    const scheduled = allItems().some(item => [item.startDate || item.date, item.dueDate].includes(value));
+    const scheduled = isMonthlyDatePicker()
+      ? monthlyEvents.some(item => { const start = item.startDate || item.date; const end = item.endDate || start; return start <= value && value <= end; })
+      : allItems().some(item => [item.startDate || item.date, item.dueDate].includes(value));
     cells.push(`<button type="button" data-date="${value}" class="${outside ? 'outside' : ''} ${value === selected ? 'selected' : ''} ${value === today ? 'today' : ''}"><span>${day}</span>${scheduled ? '<i></i>' : ''}</button>`);
   }
   $('#datePickerDays').innerHTML = cells.join('');
@@ -223,6 +233,8 @@ function openDatePicker(input, anchor = input) {
   datePickerStage = 'days';
   renderDatePicker();
   const popover = $('#datePickerPopover');
+  popover.classList.toggle('monthly-date-picker', isMonthlyDatePicker());
+  $('.date-picker-legend').innerHTML = `<i></i>${isMonthlyDatePicker() ? '중요 일정이 있는 달' : '숙제가 있는 달'}`;
   popover.hidden = false;
   const rect = anchor.getBoundingClientRect();
   const width = 238;
@@ -598,10 +610,12 @@ function showPage(page, { record = true } = {}) {
   }
   document.querySelectorAll('.nav-item').forEach(button => { const selected = button.dataset.page === page; button.classList.toggle('active', selected); button.setAttribute('aria-selected', String(selected)); });
   document.querySelectorAll('.app-page').forEach(section => { section.hidden = section.id !== `${page}Page`; section.classList.toggle('active', section.hidden === false); });
-  $('#scheduleFilterBar').hidden = page === 'register' || page === 'notes' || page === 'settings';
-  if (page !== 'register' && page !== 'notes' && page !== 'settings') document.querySelector(`#${page}Page .page-title`).insertAdjacentElement('afterend', $('#scheduleFilterBar'));
+  const hasScheduleFilter = page === 'overview' || page === 'progress';
+  $('#scheduleFilterBar').hidden = !hasScheduleFilter;
+  if (hasScheduleFilter) document.querySelector(`#${page}Page .page-title`).insertAdjacentElement('afterend', $('#scheduleFilterBar'));
   if (page === 'overview') { renderGantt(); scrollGanttToToday(); }
   if (page === 'progress') { renderChecklist(); if (focusId) requestAnimationFrame(spotlightSchedule); }
+  if (page === 'monthly') renderMonthlyCalendar();
   if (page === 'register') refreshStatus().catch(error => { setMessage(error.message, true); setStepMessage(Math.min(registerStep, 3), error.message, 'error'); });
   if (page === 'notes') renderNotes();
   updateHistoryControls();
@@ -705,7 +719,7 @@ window.addEventListener('resize', positionMonthPopover);
 updateMonthPicker();
 progressScope = overviewScope;
 function isVisibleTask(item) { const monthValue = $('#ganttMonth').value || today.slice(0, 7); const [year, month] = monthValue.split('-').map(Number); const first = `${monthValue}-01`; const last = `${monthValue}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`; const start = item.startDate || item.date; const due = item.dueDate || start; if (start > last || due < first) return false; const diff = dayDiff(due); if (progressScope === 'all') return true; if (progressScope === 'urgent') return diff !== '' && diff >= 0 && diff <= 3; if (progressScope === 'today') return due === today; const week = currentWeekRange(); return due >= week.start && due <= week.end; }
-function renderSidebarSummary() { const monthValue = $('#ganttMonth').value || today.slice(0, 7); const items = allItems().filter(item => { const start = item.startDate || item.date; const due = item.dueDate || start; return start?.startsWith(monthValue) || due?.startsWith(monthValue); }); const tasks = items.flatMap(item => lines(item).map((_, index) => ({ done: Boolean(item.done?.[index]), dueDate: item.dueDate }))); const done = tasks.filter(task => task.done).length; const remaining = tasks.length - done; const rate = tasks.length ? Math.round(done / tasks.length * 100) : 0; const badge = $('#progressNavBadge'); if (badge) { badge.textContent = String(remaining); badge.hidden = remaining === 0; } if ($('#overviewCompletionRate')) $('#overviewCompletionRate').textContent = `${rate}%`; if ($('#overviewCompletionBar')) $('#overviewCompletionBar').style.width = `${rate}%`; }
+function renderSidebarSummary() { const monthValue = $('#ganttMonth').value || today.slice(0, 7); const items = allItems().filter(item => { const start = item.startDate || item.date; const due = item.dueDate || start; return start?.startsWith(monthValue) || due?.startsWith(monthValue); }); const tasks = items.flatMap(item => lines(item).map((_, index) => ({ done: Boolean(item.done?.[index]), dueDate: item.dueDate }))); const done = tasks.filter(task => task.done).length; const remaining = tasks.length - done; const rate = tasks.length ? Math.round(done / tasks.length * 100) : 0; const badge = $('#progressNavBadge'); if (badge) { badge.textContent = remaining === 0 ? '✓' : String(remaining); badge.hidden = tasks.length === 0; badge.classList.toggle('is-complete', remaining === 0); } renderMonthlyNavBadge(); if ($('#overviewCompletionRate')) $('#overviewCompletionRate').textContent = `${rate}%`; if ($('#overviewCompletionBar')) $('#overviewCompletionBar').style.width = `${rate}%`; }
 function renderChecklist() { const host = $('#checklistList'); const tasks = allItems().flatMap(item => lines(item).map((text, lineIndex) => ({ item, text, lineIndex, done: Boolean(item.done?.[lineIndex]) }))).filter(task => isVisibleTask(task.item)); host.innerHTML = ''; $('#taskCount').textContent = progressScope === 'urgent' ? `3일 이내 · ${tasks.length}개` : `${tasks.filter(task => !task.done).length}개 남음`; if (!tasks.length) { host.innerHTML = progressScope === 'urgent' ? '<p class="muted">3일 이내 마감인 미완료 할 일이 없습니다.</p>' : '<p class="muted">이 범위에 표시할 할 일이 없습니다.</p>'; return; } tasks.sort((a, b) => (a.done - b.done) || (a.item.dueDate || '9999').localeCompare(b.item.dueDate || '9999')).forEach(task => { const diff = dayDiff(task.item.dueDate); const dueLabel = diff === '' ? '마감일 없음' : diff < 0 ? '기한 지남' : diff === 0 ? 'D-day' : `D-${diff}`; const urgency = !task.done && diff !== '' && diff <= 1 ? 'critical' : !task.done && diff !== '' && diff <= 3 ? 'soon' : ''; const row = document.createElement('label'); row.className = `action-task ${task.done ? 'done' : ''} ${urgency}`; row.innerHTML = `<input type="checkbox" ${task.done ? 'checked' : ''}/><span class="task-box"></span><span class="task-body"><small>${escapeHtml(task.item.title)}</small><strong>${escapeHtml(task.text)}</strong></span><span class="task-deadline">${dueLabel}</span>`; host.append(row); row.querySelector('input').onchange = async event => { try { const result = await bridge.plan.toggleLine(task.item.date, task.item.itemIndex, task.lineIndex, event.target.checked); savedPlans = result.plans; renderChecklist(); renderGantt(); } catch (error) { setMessage(error.message, true); event.target.checked = !event.target.checked; } }; }); }
 function courseTargets(course) { return [...new Map(course.tasks.map(task => [`${task.item.date}:${task.item.itemIndex}`, { date: task.item.date, itemIndex: task.item.itemIndex }])).values()]; }
 function editSchedule(course) {
@@ -821,6 +835,211 @@ document.addEventListener('keydown', event => {
   closeScheduleMenus();
   trigger?.blur();
 });
+
+let monthlyEvents = [];
+function renderMonthlyNavBadge() {
+  const badge = $('#monthlyNavBadge');
+  if (!badge) return;
+  const nearest = monthlyEvents
+    .filter(item => (item.category || 'test') === 'test')
+    .map(item => ({ item, days: dayDiff(item.startDate || item.date) }))
+    .filter(({ days }) => days !== '' && days >= 0 && days <= 7)
+    .sort((a, b) => a.days - b.days)[0];
+  badge.hidden = !nearest;
+  badge.classList.toggle('is-today', Boolean(nearest && nearest.days === 0));
+  if (nearest) badge.textContent = nearest.days === 0 ? 'D-day' : `D-${nearest.days}`;
+}
+let monthlyViewYear = now.getFullYear();
+let monthlyViewMonth = now.getMonth();
+let monthlySelectedDate = '';
+const monthlyCategoryLabels = { test: '시험', period: '기간', event: '행사', other: '기타', presentation: '행사' };
+const monthlyCategoryIconSvg = category => ({
+  test: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19l1-4L16.5 4.5l3 3L9 18Z"/><path d="m14.5 6.5 3 3"/></svg>',
+  period: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>',
+  event: '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="monthly-star-fill" d="m12 3.5 2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.7-5.3 2.7 1-5.8-4.2-4.1 5.9-.9Z"/></svg>',
+  other: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4"/><path d="M7 4h12l-3 4.5 3 4.5H7Z"/></svg>'
+})[normalizedMonthlyCategory(category)];
+const normalizedMonthlyCategory = value => value === 'presentation' ? 'event' : (monthlyCategoryLabels[value] ? value : 'test');
+function monthlyDateLabel(value) {
+  if (!value) return '날짜 선택';
+  const date = new Date(`${value}T00:00:00`);
+  return `${date.getMonth() + 1}월 ${date.getDate()}일 (${'일월화수목금토'[date.getDay()]})`;
+}
+function syncMonthlyCategory(category) {
+  const normalized = normalizedMonthlyCategory(category);
+  $('#monthlyEventCategory').value = normalized;
+  document.querySelectorAll('[data-monthly-category]').forEach(button => {
+    const active = button.dataset.monthlyCategory === normalized;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-checked', String(active));
+  });
+}
+function showMonthlyEditor() { $('#monthlyDayList').hidden = true; $('#monthlyEditorContent').hidden = false; }
+function resetMonthlyEditor(date = '') {
+  showMonthlyEditor();
+  $('#monthlyEventForm').reset();
+  $('#monthlyEventId').value = '';
+  $('#monthlyEventStartDate').value = date;
+  $('#monthlyEventEndDate').value = date;
+  syncMonthlyCategory('test');
+  $('#monthlyEditorMode').textContent = '새 일정';
+  $('#monthlySelectedDateLabel').textContent = '언제인가요?';
+  $('#monthlyDeleteEvent').hidden = true;
+  $('#monthlyEventMessage').textContent = '';
+  syncMonthlyDateRangeLabel();
+}
+function editMonthlyEvent(eventItem) {
+  showMonthlyEditor();
+  const startDate = eventItem.startDate || eventItem.date;
+  const endDate = eventItem.endDate || startDate;
+  $('#monthlyEventId').value = eventItem.id;
+  $('#monthlyEventTitle').value = eventItem.title;
+  $('#monthlyEventStartDate').value = startDate;
+  $('#monthlyEventEndDate').value = endDate;
+  syncMonthlyCategory(eventItem.category);
+  $('#monthlyEventNote').value = eventItem.note || '';
+  $('#monthlyEditorMode').textContent = '일정 수정';
+  $('#monthlySelectedDateLabel').textContent = '언제인가요?';
+  $('#monthlyDeleteEvent').hidden = false;
+  $('#monthlyEventMessage').textContent = '';
+  syncMonthlyDateRangeLabel();
+  $('#monthlyEventTitle').focus();
+}
+function monthlyEventDates(item) { const startDate = item.startDate || item.date; return { startDate, endDate: item.endDate || startDate }; }
+function monthlyDday(value) { return Math.ceil((new Date(`${value}T00:00:00`) - new Date(`${today}T00:00:00`)) / 86400000); }
+function monthlyListItem(item) {
+  const { startDate, endDate } = monthlyEventDates(item);
+  const category = normalizedMonthlyCategory(item.category);
+  const dateText = startDate === endDate ? monthlyDateLabel(startDate) : `${startDate.slice(5).replace('-', '.')}~${endDate.slice(5).replace('-', '.')}`;
+  return `<button type="button" class="monthly-list-item monthly-event-${category}" data-monthly-event-id="${escapeHtml(item.id)}"><i aria-hidden="true">${monthlyCategoryIconSvg(category)}</i><span><strong>${escapeHtml(item.title)}</strong><small>${monthlyCategoryLabels[category]} · ${dateText}</small></span><em>수정</em></button>`;
+}
+function showMonthlyEventList(date = '') {
+  monthlySelectedDate = date;
+  const monthPrefix = `${monthlyViewYear}-${String(monthlyViewMonth + 1).padStart(2, '0')}`;
+  const events = date ? monthlyEvents.filter(item => { const { startDate, endDate } = monthlyEventDates(item); return startDate <= date && date <= endDate; }) : monthlyEvents.filter(item => monthlyEventDates(item).endDate >= today && monthlyEventDates(item).startDate.startsWith(monthPrefix)).slice(0, 8);
+  $('#monthlyEditorContent').hidden = true;
+  $('#monthlyDayList').hidden = false;
+  $('#monthlyDayListCount').textContent = date ? `그날의 일정 · ${events.length}개` : '가까운 일정을 놓치지 마세요';
+  $('#monthlyDayListDate').textContent = date ? monthlyDateLabel(date) : '이번 달 주요 일정';
+  $('#monthlyDayListItems').innerHTML = events.length ? events.map(monthlyListItem).join('') : '<p class="monthly-list-empty">아직 등록된 중요 일정이 없어요.</p>';
+  $('#monthlyAddOnSelectedDay').textContent = date ? '＋ 이 날 일정 추가' : '＋ 중요 일정 추가';
+}
+function renderMonthlyCalendar() {
+  const host = $('#monthlyCalendarGrid');
+  if (!host) return;
+  $('#monthlyHeading').textContent = `${monthlyViewYear}년 ${monthlyViewMonth + 1}월`;
+  const firstDay = new Date(monthlyViewYear, monthlyViewMonth, 1).getDay();
+  const lastDate = new Date(monthlyViewYear, monthlyViewMonth + 1, 0).getDate();
+  const previousLastDate = new Date(monthlyViewYear, monthlyViewMonth, 0).getDate();
+  const cells = [];
+  const weekEventCounts = Array(6).fill(0);
+  for (let cellIndex = 0; cellIndex < 42; cellIndex += 1) {
+    const dayOffset = cellIndex - firstDay + 1;
+    let cellYear = monthlyViewYear;
+    let cellMonth = monthlyViewMonth;
+    let cellDay = dayOffset;
+    let outside = false;
+    if (dayOffset < 1) { cellMonth -= 1; cellDay = previousLastDate + dayOffset; outside = true; }
+    if (dayOffset > lastDate) { cellMonth += 1; cellDay = dayOffset - lastDate; outside = true; }
+    if (cellMonth < 0) { cellMonth = 11; cellYear -= 1; }
+    if (cellMonth > 11) { cellMonth = 0; cellYear += 1; }
+    const date = isoDate(cellYear, cellMonth, cellDay);
+    const events = monthlyEvents.filter(item => {
+      const { startDate, endDate } = monthlyEventDates(item);
+      return startDate <= date && date <= endDate;
+    }).sort((a, b) => { const aDates = monthlyEventDates(a); const bDates = monthlyEventDates(b); return Number(aDates.startDate === aDates.endDate) - Number(bDates.startDate === bDates.endDate) || aDates.startDate.localeCompare(bDates.startDate); });
+    weekEventCounts[Math.floor(cellIndex / 7)] = Math.max(weekEventCounts[Math.floor(cellIndex / 7)], events.length);
+    const visibleEvents = events.length >= 3 ? events.slice(0, 2) : events;
+    const eventMarkup = visibleEvents.map(item => {
+      const { startDate, endDate } = monthlyEventDates(item);
+      const category = normalizedMonthlyCategory(item.category);
+      const isRange = endDate > startDate;
+      const segmentStart = date === startDate || cellIndex % 7 === 0;
+      const segmentEnd = date === endDate || cellIndex % 7 === 6;
+      const past = endDate < today;
+      if (isRange) {
+        const dday = monthlyDday(startDate);
+        const ddayChip = segmentEnd && dday >= 0 && dday <= 3 ? `<b>D-${dday}</b>` : '';
+        return `<span class="monthly-event monthly-period-ribbon monthly-event-${category}${segmentStart ? ' segment-start' : ''}${segmentEnd ? ' segment-end' : ''}${past ? ' is-past' : ''}" data-monthly-event-id="${escapeHtml(item.id)}" title="${escapeHtml(item.title)} · ${monthlyDateLabel(startDate)} ~ ${monthlyDateLabel(endDate)}">${segmentStart ? `<i aria-hidden="true">${monthlyCategoryIconSvg(category)}</i><strong>${escapeHtml(item.title)}</strong>` : '<span>&nbsp;</span>'}${ddayChip}</span>`;
+      }
+      return `<span class="monthly-event monthly-sticker-card monthly-event-${category}${past ? ' is-past' : ''}" data-monthly-event-id="${escapeHtml(item.id)}" title="${escapeHtml(item.title)}"><i aria-hidden="true">${monthlyCategoryIconSvg(category)}</i><strong>${escapeHtml(item.title)}</strong></span>`;
+    }).join('');
+    const overflow = events.length >= 3 ? `<span class="monthly-more" data-monthly-overflow="${date}"><span>${events.slice(2).map(item => `<i class="monthly-dot monthly-event-${normalizedMonthlyCategory(item.category)}"></i>`).join('')}</span>＋${events.length - 2}개</span>` : '';
+    const count = events.length > 1 ? `<span class="monthly-day-count">${events.length}개</span>` : '';
+    cells.push(`<button type="button" class="monthly-day${outside ? ' is-outside' : ''}${date === today ? ' is-today' : ''}" data-monthly-date="${date}" aria-label="${monthlyDateLabel(date)}${events.length ? `, 중요 일정 ${events.length}개` : ''}"><span class="monthly-day-number">${cellDay}</span>${count}<span class="monthly-day-events">${eventMarkup}${overflow}</span></button>`);
+  }
+  host.innerHTML = cells.join('');
+  host.style.gridTemplateRows = weekEventCounts.map(count => count <= 1 ? '82px' : count === 2 ? '112px' : '146px').join(' ');
+}
+async function loadMonthlyEvents() {
+  try {
+    const value = await bridge.monthlyEvents.read();
+    monthlyEvents = value.events || [];
+    renderMonthlyNavBadge();
+    renderMonthlyCalendar();
+    showMonthlyEventList();
+  } catch (error) { $('#monthlyEventMessage').textContent = error.message; }
+}
+$('#monthlyPrevious').onclick = () => { monthlyViewMonth -= 1; if (monthlyViewMonth < 0) { monthlyViewMonth = 11; monthlyViewYear -= 1; } renderMonthlyCalendar(); showMonthlyEventList(); };
+$('#monthlyNext').onclick = () => { monthlyViewMonth += 1; if (monthlyViewMonth > 11) { monthlyViewMonth = 0; monthlyViewYear += 1; } renderMonthlyCalendar(); showMonthlyEventList(); };
+$('#monthlyAddEvent').onclick = () => { resetMonthlyEditor(today); $('#monthlyEventTitle').focus(); };
+$('#monthlyCloseEditor').onclick = () => showMonthlyEventList();
+function syncMonthlyDateRangeLabel() {
+  const startDate = $('#monthlyEventStartDate').value;
+  const endDate = $('#monthlyEventEndDate').value;
+  if (startDate && endDate && endDate < startDate) $('#monthlyEventEndDate').value = startDate;
+  const finalEndDate = $('#monthlyEventEndDate').value;
+  $('#monthlyStartDateText').textContent = monthlyDateLabel(startDate);
+  $('#monthlyEndDateText').textContent = monthlyDateLabel(finalEndDate);
+}
+$('#monthlyEventStartDate').oninput = syncMonthlyDateRangeLabel;
+$('#monthlyEventEndDate').oninput = syncMonthlyDateRangeLabel;
+bindDatePicker($('#monthlyEventStartDate'), $('#monthlyStartDateButton'));
+bindDatePicker($('#monthlyEventEndDate'), $('#monthlyEndDateButton'));
+$('.monthly-category-chips').onclick = event => { const button = event.target.closest('[data-monthly-category]'); if (button) syncMonthlyCategory(button.dataset.monthlyCategory); };
+$('#monthlyCalendarGrid').onclick = event => {
+  const eventChip = event.target.closest('[data-monthly-event-id]');
+  if (eventChip) {
+    const eventItem = monthlyEvents.find(item => item.id === eventChip.dataset.monthlyEventId);
+    if (eventItem) editMonthlyEvent(eventItem);
+    return;
+  }
+  const day = event.target.closest('[data-monthly-date]');
+  if (!day) return;
+  const date = day.dataset.monthlyDate;
+  const hasEvents = monthlyEvents.some(item => { const { startDate, endDate } = monthlyEventDates(item); return startDate <= date && date <= endDate; });
+  if (hasEvents) showMonthlyEventList(date); else { resetMonthlyEditor(date); $('#monthlyEventTitle').focus(); }
+};
+$('#monthlyDayListItems').onclick = event => { const button = event.target.closest('[data-monthly-event-id]'); const eventItem = button && monthlyEvents.find(item => item.id === button.dataset.monthlyEventId); if (eventItem) editMonthlyEvent(eventItem); };
+$('#monthlyCloseDayList').onclick = () => showMonthlyEventList();
+$('#monthlyAddOnSelectedDay').onclick = () => { resetMonthlyEditor(monthlySelectedDate || today); $('#monthlyEventTitle').focus(); };
+$('#monthlyEventForm').onsubmit = async event => {
+  event.preventDefault();
+  const startDate = $('#monthlyEventStartDate').value;
+  const draft = { id: $('#monthlyEventId').value, title: $('#monthlyEventTitle').value, startDate, endDate: $('#monthlyEventEndDate').value || startDate, category: $('#monthlyEventCategory').value, note: $('#monthlyEventNote').value };
+  const message = $('#monthlyEventMessage');
+  try {
+    const value = await bridge.monthlyEvents.save(draft);
+    monthlyEvents = value.events || [];
+    renderMonthlyNavBadge();
+    const [year, month] = draft.startDate.split('-').map(Number);
+    monthlyViewYear = year; monthlyViewMonth = month - 1;
+    renderMonthlyCalendar();
+    showMonthlyEventList(draft.startDate);
+  } catch (error) { message.textContent = error.message; }
+};
+$('#monthlyDeleteEvent').onclick = async () => {
+  const id = $('#monthlyEventId').value;
+  if (!id) return;
+  try {
+    const value = await bridge.monthlyEvents.delete(id);
+    monthlyEvents = value.events || [];
+    renderMonthlyNavBadge();
+    renderMonthlyCalendar();
+    showMonthlyEventList();
+  } catch (error) { $('#monthlyEventMessage').textContent = error.message; }
+};
+loadMonthlyEvents();
 function renderChecklist() {
   renderSidebarSummary();
   const host = $('#checklistList');

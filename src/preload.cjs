@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('myholypoly', {
   appInfo: {
     read: () => ipcRenderer.invoke('app:info'),
+    checkUpdate: () => ipcRenderer.invoke('app:check-update'),
     openRepository: () => ipcRenderer.invoke('app:open-repository'),
     desktopShortcutStatus: () => ipcRenderer.invoke('app:desktop-shortcut-status'),
     setDesktopShortcut: enabled => ipcRenderer.invoke('app:set-desktop-shortcut', enabled)
@@ -33,5 +34,10 @@ contextBridge.exposeInMainWorld('myholypoly', {
     toggleLine: (date, itemIndex, lineIndex, checked) => ipcRenderer.invoke('plan:toggle-line', { date, itemIndex, lineIndex, checked }),
     toggleTodayGoal: (date, itemIndex, lineIndex, enabled, goalDate) => ipcRenderer.invoke('plan:toggle-today-goal', { date, itemIndex, lineIndex, enabled, goalDate }),
     deleteItems: targets => ipcRenderer.invoke('plan:delete-items', targets)
+  },
+  monthlyEvents: {
+    read: () => ipcRenderer.invoke('monthly-events:read'),
+    save: event => ipcRenderer.invoke('monthly-events:save', event),
+    delete: id => ipcRenderer.invoke('monthly-events:delete', id)
   }
 });

@@ -12,7 +12,9 @@ const appIcon = join(here, '..', 'assets', 'myholypoly.ico');
 const persistentDataPath = join(app.getPath('appData'), 'myholypoly');
 app.setPath('userData', persistentDataPath);
 const planFile = () => join(app.getPath('userData'), 'plan.json');
+const monthlyEventFile = () => join(app.getPath('userData'), 'monthly-events.json');
 const blankPlan = { version: 1, plans: {} };
+const blankMonthlyEvents = { version: 1, events: [] };
 const epolyInstallGuideUrl = 'https://www.youtube.com/watch?v=g7CY3u4QoWU';
 const githubRepositoryUrl = 'https://github.com/magune-lab/myholypoly';
 const desktopShortcutPath = () => join(app.getPath('desktop'), 'myholypoly.lnk');
@@ -29,6 +31,16 @@ async function readPlan() {
 async function savePlan(plan) {
   await mkdir(dirname(planFile()), { recursive: true });
   await writeFile(planFile(), JSON.stringify(plan, null, 2), 'utf8');
+}
+async function readMonthlyEvents() {
+  try {
+    const value = JSON.parse(await readFile(monthlyEventFile(), 'utf8'));
+    return { version: 1, events: Array.isArray(value?.events) ? value.events : [] };
+  } catch { return structuredClone(blankMonthlyEvents); }
+}
+async function saveMonthlyEvents(value) {
+  await mkdir(dirname(monthlyEventFile()), { recursive: true });
+  await writeFile(monthlyEventFile(), JSON.stringify(value, null, 2), 'utf8');
 }
 async function removeRetiredSettings() {
   await Promise.all(retiredSettingsFiles.map(async file => {
@@ -211,6 +223,21 @@ app.whenReady().then(async () => {
     return window.isMaximized();
   });
   ipcMain.handle('app:info', () => ({ version: app.getVersion() }));
+  ipcMain.handle('app:check-update', async () => {
+    try {
+      const response = await fetch('https://api.github.com/repos/magune-lab/myholypoly/releases/latest', {
+        headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'myholypoly-desktop' },
+        signal: AbortSignal.timeout(4500)
+      });
+      if (!response.ok) return { available: false };
+      const release = await response.json();
+      const latestVersion = String(release.tag_name || '').replace(/^v/i, '');
+      const current = app.getVersion().split('.').map(Number);
+      const latest = latestVersion.split('.').map(Number);
+      const available = [0, 1, 2].some(index => (latest[index] || 0) !== (current[index] || 0) && (latest[index] || 0) > (current[index] || 0) && latest.slice(0, index).every((part, prior) => (part || 0) === (current[prior] || 0)));
+      return { available, latestVersion };
+    } catch { return { available: false }; }
+  });
   ipcMain.handle('app:open-repository', () => shell.openExternal(githubRepositoryUrl));
   ipcMain.handle('app:desktop-shortcut-status', async () => ({ enabled: await desktopShortcutExists() }));
   ipcMain.handle('app:set-desktop-shortcut', (_event, enabled) => setDesktopShortcut(Boolean(enabled)));
@@ -226,6 +253,36 @@ app.whenReady().then(async () => {
   ipcMain.handle('poly-web:open-homework', () => openPolyWebHomework());
   ipcMain.handle('poly-web:date-homework', (_event, date) => capturePolyWebHomework(date));
   ipcMain.handle('plan:read', () => readPlan());
+  ipcMain.handle('monthly-events:read', () => readMonthlyEvents());
+  ipcMain.handle('monthly-events:save', async (_event, draft) => {
+    const title = String(draft?.title || '').trim();
+    const startDate = String(draft?.startDate || draft?.date || '');
+    const endDate = String(draft?.endDate || startDate);
+    if (!title) throw new Error('일정 이름을 입력해 주세요.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) throw new Error('시작일과 종료일을 선택해 주세요.');
+    if (endDate < startDate) throw new Error('종료일은 시작일보다 빠를 수 없어요.');
+    const value = await readMonthlyEvents();
+    const event = {
+      id: String(draft?.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+      title,
+      startDate,
+      endDate,
+      category: ['test', 'period', 'event', 'other', 'presentation'].includes(draft?.category) ? draft.category : 'test',
+      note: String(draft?.note || '').trim(),
+      updatedAt: new Date().toISOString()
+    };
+    const index = value.events.findIndex(item => item.id === event.id);
+    if (index >= 0) value.events[index] = event; else value.events.push(event);
+    value.events.sort((a, b) => String(a.startDate || a.date || '').localeCompare(String(b.startDate || b.date || '')) || a.title.localeCompare(b.title, 'ko'));
+    await saveMonthlyEvents(value);
+    return value;
+  });
+  ipcMain.handle('monthly-events:delete', async (_event, id) => {
+    const value = await readMonthlyEvents();
+    value.events = value.events.filter(item => item.id !== String(id || ''));
+    await saveMonthlyEvents(value);
+    return value;
+  });
   ipcMain.handle('plan:register', async (_event, draft) => {
     if (!draft?.date || !Array.isArray(draft.items)) throw new Error('등록할 일정 형식이 올바르지 않습니다.');
     const plan = await readPlan();
