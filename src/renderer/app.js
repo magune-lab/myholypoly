@@ -317,7 +317,7 @@ function journeySlots(total, completed, maxSlots = 8) {
     ...Array.from({ length: total - completed }, (_, index) => ({ type: 'todo', next: index === 0 }))
   ];
   const remaining = total - completed;
-  return remaining > 0 ? [{ type: 'more', count: remaining }] : [];
+  return remaining > 0 ? [{ type: 'more', count: remaining }] : [{ type: 'complete-group', count: total }];
 }
 function renderGantt() {
   const host = $('#ganttChart');
@@ -369,15 +369,20 @@ function renderGantt() {
     const stones = slots.map(slot => {
       if (slot.type === 'done') return '<i class="gantt-stone is-done" aria-hidden="true"><svg viewBox="0 0 30 30"><polygon points="15,6.5 17.6,11.9 23.6,12.7 19.3,16.9 20.3,22.8 15,20 9.7,22.8 10.7,16.9 6.4,12.7 12.4,11.9"/></svg></i>';
       if (slot.type === 'todo') return `<i class="gantt-stone${slot.next ? ' is-next' : ''}" aria-hidden="true"></i>`;
-      if (slot.type === 'done-group') return `<span class="gantt-count-chip is-done-group" aria-hidden="true"><svg viewBox="0 0 20 20"><polygon points="10,1.8 12.4,6.7 17.8,7.5 13.9,11.3 14.8,16.7 10,14.1 5.2,16.7 6.1,11.3 2.2,7.5 7.6,6.7"/></svg><span>×${slot.count}</span></span>`;
+      if (slot.type === 'done-group') return `<span class="gantt-count-chip is-done-group" aria-hidden="true"><svg viewBox="0 0 20 20"><polygon points="10,1.8 12.4,6.7 17.8,7.5 13.9,11.3 14.8,16.7 10,14.1 5.2,16.7 6.1,11.3 2.2,7.5 7.6,6.7"/></svg><img class="gantt-multiply-icon" src="./icons/icon-multiply.svg" alt=""><span>${slot.count}</span></span>`;
+      if (slot.type === 'complete-group') return '';
       return `<span class="gantt-count-chip is-more" aria-hidden="true">+${slot.count}</span>`;
     }).join('');
+    const compactComplete = taskLines.length > routeCapacity && completed === taskLines.length;
     let cells = `<td class="gantt-subject-col"><span class="gantt-subject-badge" style="--course-bg:${palette.bg}">${escapeHtml(subjectInitial)}</span><span class="gantt-subject-copy"><strong>${escapeHtml(item.title)}</strong><small>할 일 ${completed}/${taskLines.length}</small></span></td>`;
     for (let day = 1; day <= days; day += 1) {
       if (day === startDay) {
         const containsToday = todayDay >= startDay && todayDay <= endDay;
         const todayBand = containsToday ? `<span class="gantt-today-band" style="--today-offset:${todayDay - startDay};--span:${span}" aria-hidden="true"></span>` : '';
-        cells += `<td colspan="${span}" class="gantt-cell gantt-path-cell${containsToday ? ' contains-today' : ''}">${todayBand}<div class="gantt-journey-path" role="button" tabindex="0" data-course-key="${escapeHtml(key)}" style="--course-bg:${palette.bg};--course-border:${palette.border};--course-soft:${palette.soft};--course-text:${palette.text}" aria-label="${escapeHtml(item.title)} ${completed}/${taskLines.length} 완료${badge ? `, ${badge}` : ''}, 진행 현황 보기">${dday < 0 && progress < 100 ? '<em class="gantt-overdue-chip">기한 지남</em>' : ''}<span class="gantt-start-dot" aria-hidden="true"></span><span class="gantt-path-line" aria-hidden="true"></span><span class="gantt-stones">${stones}</span><svg class="gantt-finish-flag" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V3"/><path d="M7 3.5h13l-3.5 5 3.5 5H7Z"/></svg></div></td>`;
+        const finishMarker = compactComplete
+          ? `<svg class="gantt-completion-medal" viewBox="0 0 52 70" aria-label="할 일 ${taskLines.length}개 모두 완료"><path class="medal-ribbon-pink" d="M14 4h9l5 20h-9Z"/><path class="medal-ribbon-blue" d="M38 4h-9l-5 20h9Z"/><circle class="medal-face" cx="26" cy="44" r="20"/><circle class="medal-stitch" cx="26" cy="44" r="14"/><text x="26" y="51" text-anchor="middle">${taskLines.length}</text></svg>`
+          : '<svg class="gantt-finish-flag" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V3"/><path d="M7 3.5h13l-3.5 5 3.5 5H7Z"/></svg>';
+        cells += `<td colspan="${span}" class="gantt-cell gantt-path-cell${containsToday ? ' contains-today' : ''}">${todayBand}<div class="gantt-journey-path${compactComplete ? ' is-medal-complete' : ''}" role="button" tabindex="0" data-course-key="${escapeHtml(key)}" style="--course-bg:${palette.bg};--course-border:${palette.border};--course-soft:${palette.soft};--course-text:${palette.text}" aria-label="${escapeHtml(item.title)} ${completed}/${taskLines.length} 완료${badge ? `, ${badge}` : ''}, 진행 현황 보기">${dday < 0 && progress < 100 ? '<em class="gantt-overdue-chip">기한 지남</em>' : ''}<span class="gantt-start-dot" aria-hidden="true"></span><span class="gantt-path-line" aria-hidden="true"></span><span class="gantt-stones">${stones}</span>${finishMarker}</div></td>`;
         day += span - 1;
       } else cells += `<td class="gantt-cell${day === todayDay ? ' contains-today' : ''}">${day === todayDay ? '<span class="gantt-today-band" aria-hidden="true"></span>' : ''}</td>`;
     }

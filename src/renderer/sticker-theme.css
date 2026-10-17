@@ -372,7 +372,14 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
 .gantt-count-chip { position: relative; z-index: 5; display: inline-flex; min-width: 32px; height: 28px; padding: 0 3px; border: 2.5px solid var(--st-ink); border-radius: 999px; background: var(--course-bg); box-shadow: none; color: var(--st-ink); font: 400 12px var(--st-font); align-items: center; justify-content: center; gap: 1px; flex: 0 0 auto; }
 .gantt-count-chip.is-done-group { min-width: 41px; }
 .gantt-count-chip.is-more { background: #fff; }
+.gantt-completion-medal { position: relative; z-index: 6; width: 34px; height: 46px; margin: 5px -2px 0 -5px; overflow: visible; flex: 0 0 34px; }
+.gantt-completion-medal .medal-ribbon-pink { fill: var(--course-bg); stroke: var(--st-ink); stroke-width: 2.4; stroke-linejoin: round; }
+.gantt-completion-medal .medal-ribbon-blue { fill: var(--st-blue); stroke: var(--st-ink); stroke-width: 2.4; stroke-linejoin: round; }
+.gantt-completion-medal .medal-face { fill: var(--st-yellow); stroke: var(--st-ink); stroke-width: 3; }
+.gantt-completion-medal .medal-stitch { fill: none; stroke: var(--st-ink); stroke-width: 1.8; stroke-dasharray: 3 3; }
+.gantt-completion-medal text { fill: var(--st-ink); font: 400 22px var(--st-font); }
 .gantt-count-chip svg { width: 13px; height: 13px; overflow: visible; flex: 0 0 13px; }
+.gantt-count-chip .gantt-multiply-icon { display: block; width: 10px; height: 10px; margin: 0 -1px; object-fit: contain; flex: 0 0 10px; }
 .gantt-count-chip svg polygon { fill: var(--st-yellow); stroke: var(--st-ink); stroke-width: 1.7; stroke-linejoin: round; }
 .gantt-count-chip span { color: var(--st-ink); font-size: 12px; line-height: 1; white-space: nowrap; }
 .gantt-journey-path .gantt-finish-flag { margin: 0; }
