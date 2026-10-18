@@ -6,4 +6,5 @@ release-msix/
 *.p12
 review-*.png
 registration-c.png
+docs/.demo-profile/
 .DS_Store

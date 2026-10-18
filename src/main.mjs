@@ -10,7 +10,7 @@ const projectRoot = join(here, '..');
 const appIcon = join(here, '..', 'assets', 'myholypoly.ico');
 // Keep user data independent from the executable/version folder so extracted
 // releases and development builds all read the same schedules and localStorage.
-const persistentDataPath = join(app.getPath('appData'), 'myholypoly');
+const persistentDataPath = process.env.MYHOLYPOLY_DATA_PATH || join(app.getPath('appData'), 'myholypoly');
 app.setPath('userData', persistentDataPath);
 const planFile = () => join(app.getPath('userData'), 'plan.json');
 const monthlyEventFile = () => join(app.getPath('userData'), 'monthly-events.json');
