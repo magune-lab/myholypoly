@@ -342,18 +342,21 @@ function openDatePicker(input, anchor = input) {
   popover.classList.toggle('monthly-date-picker', isMonthlyDatePicker());
   $('.date-picker-legend').innerHTML = `<i></i>${isMonthlyDatePicker() ? '중요 일정이 있는 달' : '숙제가 있는 달'}`;
   popover.hidden = false;
+  if (isMonthlyDatePicker()) anchor.scrollIntoView({ block: 'start' });
   const rect = anchor.getBoundingClientRect();
   const width = 238;
   const edge = 12;
   const bottomSafeArea = document.body.classList.contains('is-maximized') ? 56 : edge;
-  popover.style.maxHeight = `${Math.max(240, window.innerHeight - edge - bottomSafeArea)}px`;
+  const below = rect.bottom + 9;
+  const availableBelow = window.innerHeight - bottomSafeArea - below;
+  const monthlyDatePicker = isMonthlyDatePicker();
+  popover.style.maxHeight = `${Math.max(0, monthlyDatePicker ? availableBelow : window.innerHeight - edge - bottomSafeArea)}px`;
   popover.style.overflowY = 'auto';
   popover.style.left = `${Math.max(12, Math.min(rect.left, window.innerWidth - width - 12))}px`;
   const popoverHeight = Math.min(popover.offsetHeight, window.innerHeight - edge - bottomSafeArea);
-  const below = rect.bottom + 9;
   const above = rect.top - popoverHeight - 9;
-  const preferredTop = below + popoverHeight <= window.innerHeight - bottomSafeArea ? below : above;
-  popover.style.top = `${Math.max(edge, Math.min(preferredTop, window.innerHeight - popoverHeight - bottomSafeArea))}px`;
+  const preferredTop = monthlyDatePicker || below + popoverHeight <= window.innerHeight - bottomSafeArea ? below : above;
+  popover.style.top = `${monthlyDatePicker ? preferredTop : Math.max(edge, Math.min(preferredTop, window.innerHeight - popoverHeight - bottomSafeArea))}px`;
 }
 function closeDatePicker() { $('#datePickerPopover').hidden = true; activeDateInput = null; }
 function bindDatePicker(input, trigger = input) { trigger.onclick = event => { event.stopPropagation(); openDatePicker(input, trigger); }; trigger.onkeydown = event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openDatePicker(input, trigger); } if (event.key === 'Escape') closeDatePicker(); }; }
@@ -445,7 +448,7 @@ function renderGantt() {
   });
   const paletteByCourse = coursePaletteMap(items);
   $('#ganttCount').textContent = overviewScope === 'urgent' ? `3일 이내 · ${items.length}개` : `${items.length}개 일정`;
-  if (!items.length) { host.innerHTML = `<p class="muted">${overviewScope === 'all' ? '이 달에 표시할 일정이 없습니다.' : '선택한 범위에 남은 일정이 없습니다.'}</p>`; return; }
+  if (!items.length) { delete host.dataset.latestDate; host.scrollLeft = 0; host.innerHTML = `<p class="muted">${overviewScope === 'all' ? '이 달에 표시할 일정이 없습니다.' : '선택한 범위에 남은 일정이 없습니다.'}</p>`; return; }
   const weekdayNames = ['일', '월', '화', '수', '목', '금', '토'];
   const todayDay = today.startsWith(`${monthValue}-`) ? Number(today.slice(8, 10)) : 0;
   const axis = Array.from({ length: days }, (_, index) => {
@@ -453,7 +456,7 @@ function renderGantt() {
     const weekday = new Date(year, month - 1, index + 1).getDay();
     const weekendClass = weekday === 0 ? ' is-sunday' : weekday === 6 ? ' is-saturday' : '';
     const todayClass = value === today ? ' today-col' : '';
-    return `<th class="day-col${weekendClass}${todayClass}"><small>${weekdayNames[weekday]}</small><span>${index + 1}</span></th>`;
+    return `<th class="day-col${weekendClass}${todayClass}" data-date="${value}"><small>${weekdayNames[weekday]}</small><span>${index + 1}</span></th>`;
   }).join('');
   const rows = items.map((item, itemIndex) => {
     const start = item.startDate || item.date;
@@ -484,11 +487,12 @@ function renderGantt() {
     for (let day = 1; day <= days; day += 1) {
       if (day === startDay) {
         const containsToday = todayDay >= startDay && todayDay <= endDay;
+        const finishDate = end > last ? last : end;
         const todayBand = containsToday ? `<span class="gantt-today-band" style="--today-offset:${todayDay - startDay};--span:${span}" aria-hidden="true"></span>` : '';
         const finishMarker = compactComplete
           ? `<svg class="gantt-completion-medal" viewBox="0 0 52 70" aria-label="할 일 ${taskLines.length}개 모두 완료"><path class="medal-ribbon-pink" d="M14 4h9l5 20h-9Z"/><path class="medal-ribbon-blue" d="M38 4h-9l-5 20h9Z"/><circle class="medal-face" cx="26" cy="44" r="20"/><circle class="medal-stitch" cx="26" cy="44" r="14"/><text x="26" y="51" text-anchor="middle">${taskLines.length}</text></svg>`
           : '<svg class="gantt-finish-flag" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V3"/><path d="M7 3.5h13l-3.5 5 3.5 5H7Z"/></svg>';
-        cells += `<td colspan="${span}" class="gantt-cell gantt-path-cell${containsToday ? ' contains-today' : ''}">${todayBand}<div class="gantt-journey-path${compactComplete ? ' is-medal-complete' : ''}" role="button" tabindex="0" data-course-key="${escapeHtml(key)}" style="--course-bg:${palette.bg};--course-border:${palette.border};--course-soft:${palette.soft};--course-text:${palette.text}" aria-label="${escapeHtml(item.title)} ${completed}/${taskLines.length} 완료${badge ? `, ${badge}` : ''}, 진행 현황 보기">${dday < 0 && progress < 100 ? '<em class="gantt-overdue-chip">기한 지남</em>' : ''}<span class="gantt-start-dot" aria-hidden="true"></span><span class="gantt-path-line" aria-hidden="true"></span><span class="gantt-stones">${stones}</span>${finishMarker}</div></td>`;
+        cells += `<td colspan="${span}" class="gantt-cell gantt-path-cell${containsToday ? ' contains-today' : ''}">${todayBand}<div class="gantt-journey-path${compactComplete ? ' is-medal-complete' : ''}" role="button" tabindex="0" data-course-key="${escapeHtml(key)}" data-finish-date="${finishDate}" style="--course-bg:${palette.bg};--course-border:${palette.border};--course-soft:${palette.soft};--course-text:${palette.text}" aria-label="${escapeHtml(item.title)} ${completed}/${taskLines.length} 완료${badge ? `, ${badge}` : ''}, 진행 현황 보기">${dday < 0 && progress < 100 ? '<em class="gantt-overdue-chip">기한 지남</em>' : ''}<span class="gantt-start-dot" aria-hidden="true"></span><span class="gantt-path-line" aria-hidden="true"></span><span class="gantt-stones">${stones}</span>${finishMarker}</div></td>`;
         day += span - 1;
       } else cells += `<td class="gantt-cell${day === todayDay ? ' contains-today' : ''}">${day === todayDay ? '<span class="gantt-today-band" aria-hidden="true"></span>' : ''}</td>`;
     }
@@ -496,6 +500,11 @@ function renderGantt() {
   }).join('');
   const tableWidth = 200 + (days * 54);
   host.innerHTML = `<table class="gantt-table" style="width:${tableWidth}px;min-width:${tableWidth}px"><colgroup><col class="gantt-subject-column">${Array.from({ length: days }, () => '<col>').join('')}</colgroup><thead><tr><th class="gantt-subject-col">과목</th>${axis}</tr></thead><tbody>${rows}</tbody></table>`;
+  host.dataset.latestDate = items.reduce((latest, item) => {
+    const dueDate = item.dueDate || item.startDate || item.date;
+    const visibleDueDate = dueDate > last ? last : dueDate;
+    return visibleDueDate > latest ? visibleDueDate : latest;
+  }, first);
   host.querySelectorAll('.gantt-journey-path').forEach(button => {
     button.onclick = () => {
       prepareProgressFocus(button.dataset.courseKey);
@@ -507,7 +516,7 @@ function renderGantt() {
       button.click();
     };
   });
-  if ($('#overviewPage').classList.contains('active')) scrollGanttToToday();
+  if ($('#overviewPage').classList.contains('active')) scrollGanttToLatestDate();
 }
 function renderProgressFocus() { const items = allItems(); const tasks = items.flatMap(item => lines(item).map((text, index) => ({ item, text, done: Boolean(item.done?.[index]) }))); const remaining = tasks.filter(task => !task.done); const dueSoon = items.filter(item => { const diff = dayDiff(item.dueDate); return diff !== '' && diff >= 0 && diff <= 3 && lines(item).some((_, index) => !item.done?.[index]); }).length; $('#progressSummary').innerHTML = `<div><span>남은 할 일</span><strong>${remaining.length}</strong></div><div><span>마감 임박</span><strong>${dueSoon}</strong></div><div><span>완료</span><strong>${tasks.length - remaining.length}<small> / ${tasks.length}</small></strong></div>`; const focus = $('#focusList'); if (!remaining.length) { focus.innerHTML = '<div class="focus-empty">오늘은 남은 숙제가 없습니다.</div>'; return; } focus.innerHTML = remaining.sort((a, b) => (a.item.dueDate || '9999').localeCompare(b.item.dueDate || '9999')).slice(0, 6).map(task => { const diff = dayDiff(task.item.dueDate); const label = diff === '' ? '' : diff === 0 ? 'D-day' : `D-${diff}`; return `<div class="focus-item"><span class="focus-check"></span><div><strong>${escapeHtml(task.text)}</strong><small>${escapeHtml(task.item.title)}</small></div><span>${label}</span></div>`; }).join(''); }
 function showRegistered(planData) { savedPlans = planData?.plans || savedPlans; updateMonthPicker(); renderChecklist(); renderProgressFocus(); renderGantt(); }
@@ -653,26 +662,28 @@ function updateHistoryControls() {
   if ($('#historyBack')) $('#historyBack').disabled = pageHistoryIndex <= 0;
   if ($('#historyForward')) $('#historyForward').disabled = pageHistoryIndex >= pageHistory.length - 1;
 }
-function scrollGanttToToday() {
+function scrollGanttToLatestDate() {
   const host = $('#ganttChart');
   if (!host) return;
-  const positionToday = () => {
-    const todayCell = host.querySelector('.today-col');
-    if (!todayCell) {
+  const positionAtLatestDate = () => {
+    const targetMarker = host.querySelector(
+      `.gantt-journey-path[data-finish-date="${host.dataset.latestDate}"] .gantt-finish-flag, .gantt-journey-path[data-finish-date="${host.dataset.latestDate}"] .gantt-completion-medal`
+    );
+    if (!targetMarker) {
       host.scrollLeft = 0;
       return;
     }
     const hostRect = host.getBoundingClientRect();
-    const todayRect = todayCell.getBoundingClientRect();
-    const todayRightInContent = todayRect.right - hostRect.left + host.scrollLeft;
-    const targetLeft = todayRightInContent - host.clientWidth;
+    const markerRect = targetMarker.getBoundingClientRect();
+    const targetRightInContent = markerRect.right - hostRect.left + host.scrollLeft;
+    const targetLeft = targetRightInContent - host.clientWidth;
     const maxLeft = Math.max(0, host.scrollWidth - host.clientWidth);
     host.scrollLeft = Math.min(maxLeft, Math.max(0, targetLeft));
   };
-  positionToday();
+  positionAtLatestDate();
   requestAnimationFrame(() => {
-    positionToday();
-    requestAnimationFrame(positionToday);
+    positionAtLatestDate();
+    requestAnimationFrame(positionAtLatestDate);
   });
 }
 function enableGanttScrolling() {
@@ -706,12 +717,6 @@ function enableGanttScrolling() {
   host.addEventListener('pointercancel', stopDragging);
 }
 enableGanttScrolling();
-let ganttCenterFrame = 0;
-new ResizeObserver(() => {
-  if (!$('#overviewPage').classList.contains('active')) return;
-  cancelAnimationFrame(ganttCenterFrame);
-  ganttCenterFrame = requestAnimationFrame(scrollGanttToToday);
-}).observe($('#ganttChart'));
 function showPage(page, { record = true } = {}) {
   const currentPage = document.querySelector('.nav-item.active')?.dataset.page;
   if (record && page !== currentPage) {
@@ -724,7 +729,7 @@ function showPage(page, { record = true } = {}) {
   const hasScheduleFilter = page === 'overview' || page === 'progress';
   $('#scheduleFilterBar').hidden = !hasScheduleFilter;
   if (hasScheduleFilter) document.querySelector(`#${page}Page .page-title`).insertAdjacentElement('afterend', $('#scheduleFilterBar'));
-  if (page === 'overview') { renderGantt(); scrollGanttToToday(); }
+  if (page === 'overview') scrollGanttToLatestDate();
   if (page === 'progress') { renderChecklist(); if (focusId) requestAnimationFrame(spotlightSchedule); }
   if (page === 'monthly') renderMonthlyCalendar();
   if (page === 'register') refreshStatus().catch(error => { setMessage(error.message, true); setStepMessage(Math.min(registerStep, 3), error.message, 'error'); });
