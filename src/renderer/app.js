@@ -1255,4 +1255,5 @@ function renderChecklist() {
     card.querySelector('[data-delete-schedule]').onclick = event => { event.stopPropagation(); deleteSchedule(course); };
   });
 }
-(async () => { try { await refreshStatus(); showRegistered(await bridge.plan.read()); } catch (error) { setMessage(error.message, true); } })();
+bridge.plan.read().then(showRegistered).catch(error => setMessage(error.message, true));
+refreshStatus().catch(error => setMessage(error.message, true));

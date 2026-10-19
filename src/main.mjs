@@ -330,13 +330,8 @@ async function capturePolyWebHomework(dateValue) {
   };
 }
 
-app.whenReady().then(async () => {
-  await removeRetiredSettings();
+app.whenReady().then(() => {
   app.setAppUserModelId('com.myholypoly.desktop');
-  if (app.isPackaged && await desktopShortcutExists()) {
-    try { await setDesktopShortcut(true); }
-    catch (error) { console.error('바탕화면 바로가기 업데이트 실패:', error); }
-  }
   Menu.setApplicationMenu(null);
   ipcMain.handle('window:minimize', event => {
     const window = BrowserWindow.fromWebContents(event.sender);
@@ -484,6 +479,12 @@ app.whenReady().then(async () => {
     return plan;
   });
   createWindow();
+  removeRetiredSettings().catch(error => console.error('사용하지 않는 설정 파일 정리 실패:', error));
+  if (app.isPackaged) {
+    desktopShortcutExists()
+      .then(exists => exists ? setDesktopShortcut(true) : null)
+      .catch(error => console.error('바탕화면 바로가기 업데이트 실패:', error));
+  }
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 app.on('before-quit', () => { appQuitting = true; });
