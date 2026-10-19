@@ -67,6 +67,7 @@ myholypoly는 e-POLY 및 POLY 웹 로그인 아이디와 비밀번호를 수집�
 ```powershell
 pnpm install
 pnpm start
+pnpm test
 ```
 
 Windows APPX 생성:

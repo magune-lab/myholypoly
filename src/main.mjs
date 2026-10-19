@@ -1,9 +1,10 @@
 import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron';
-import { access, mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { access, mkdir, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { captureHomeworkByDate, captureOpenHomework, captureTodayHomework, getEpolyStatus, launchEpoly, openCalendar } from './services/epoly.mjs';
+import { readJsonFile } from './services/json-storage.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const projectRoot = join(here, '..');
@@ -145,18 +146,25 @@ async function downloadUpdate(event) {
 }
 
 async function readPlan() {
-  try { return JSON.parse(await readFile(planFile(), 'utf8')); }
-  catch { return structuredClone(blankPlan); }
+  return readJsonFile(
+    planFile(),
+    blankPlan,
+    value => value && typeof value === 'object' && !Array.isArray(value)
+      && value.plans && typeof value.plans === 'object' && !Array.isArray(value.plans),
+    '숙제 데이터'
+  );
 }
 async function savePlan(plan) {
   await mkdir(dirname(planFile()), { recursive: true });
   await writeFile(planFile(), JSON.stringify(plan, null, 2), 'utf8');
 }
 async function readMonthlyEvents() {
-  try {
-    const value = JSON.parse(await readFile(monthlyEventFile(), 'utf8'));
-    return { version: 1, events: Array.isArray(value?.events) ? value.events : [] };
-  } catch { return structuredClone(blankMonthlyEvents); }
+  return readJsonFile(
+    monthlyEventFile(),
+    blankMonthlyEvents,
+    value => value && typeof value === 'object' && !Array.isArray(value) && Array.isArray(value.events),
+    '시험 달력 데이터'
+  );
 }
 async function saveMonthlyEvents(value) {
   await mkdir(dirname(monthlyEventFile()), { recursive: true });

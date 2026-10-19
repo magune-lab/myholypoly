@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "electron .",
     "start": "electron .",
+    "test": "node --test tests\\json-storage.test.mjs",
     "package:win": "electron-packager . myholypoly --platform=win32 --arch=x64 --out=release --overwrite --icon=assets/myholypoly.ico --ignore=release",
     "package:msix": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-msix.ps1"
   },
