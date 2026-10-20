@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>myholypoly — POLY 웹 가져오기 시안</title>
+    <link rel="stylesheet" href="../../src/renderer/style.css" />
+    <link rel="stylesheet" href="../../src/renderer/editor.css" />
+    <link rel="stylesheet" href="../../src/renderer/layout-fixes.css" />
+    <link rel="stylesheet" href="../../src/renderer/linear-theme.css" />
+    <link rel="stylesheet" href="../../src/renderer/control-system.css" />
+    <link rel="stylesheet" href="../../src/renderer/sticker-theme.css" />
+    <style>
+      #registerPage { display: block !important; }
+      #registerPage .register-page-title { min-height: 74px !important; }
+      #registerPage .poly-web-login-card { padding: 20px !important; }
+      #registerPage .poly-web-card-head { display: flex; margin-bottom: 18px; align-items: center; justify-content: space-between; }
+      #registerPage .poly-web-card-head .import-card-title { margin: 0 !important; color: var(--st-sub) !important; font-size: 16px !important; }
+      #registerPage .poly-web-copy { margin-bottom: 18px; }
+      #registerPage .poly-web-copy strong { display: block; color: var(--st-ink); font-size: 18px; font-weight: 400; line-height: 1.35; }
+      #registerPage .poly-web-copy p { margin: 5px 0 0; color: var(--st-sub); font-size: 13px; line-height: 1.45; }
+      #registerPage .poly-web-login-card > .poly-web-login-button { width: 100% !important; min-height: 56px !important; margin-top: 0 !important; border: 3px solid var(--st-ink) !important; border-radius: 999px !important; background: var(--st-pink) !important; box-shadow: var(--st-shadow) !important; color: var(--st-ink) !important; font-size: 16px !important; }
+      #registerPage .calendar-import-card .import-card-title { margin: 0 !important; }
+      #registerPage .calendar-import-card .load-schedule { min-height: 48px !important; margin-top: 16px !important; }
+      #registerPage .calendar-import-card .open-calendar-secondary { min-height: 42px !important; margin-top: 10px !important; }
+      #registerPage .register-steps { margin-bottom: 22px !important; }
+      #registerPage .register-dashboard { grid-template-columns: 300px minmax(0, 1fr) !important; }
+      #registerPage .course-toolbar #sourceLabel { display: none !important; }
+      #registerPage .course-accordion-summary { flex-direction: column !important; align-items: flex-start !important; gap: 3px !important; }
+      #registerPage .course-accordion-summary small { color: var(--st-sub) !important; }
+      #registerPage .focus-course-line > button { min-height: 36px !important; border: 2px solid var(--st-ink) !important; border-radius: 999px !important; background: #fff !important; box-shadow: var(--st-shadow-small) !important; color: #D93A3A !important; font-size: 12px !important; }
+      @media (max-width: 1050px) {
+        #registerPage .register-dashboard { grid-template-columns: 270px minmax(0, 1fr) !important; }
+        #registerPage .course-toolbar { align-items: center !important; flex-direction: row !important; }
+        #registerPage .course-toolbar-actions { width: auto !important; }
+      }
+      @media (max-width: 980px) {
+        #registerPage .register-dashboard { grid-template-columns: 1fr !important; }
+        #registerPage .register-control-panel { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+      }
+      @media (max-width: 760px) {
+        #registerPage .register-control-panel { grid-template-columns: 1fr !important; }
+        #registerPage .course-toolbar { align-items: flex-start !important; flex-direction: column !important; }
+        #registerPage .course-toolbar-actions { width: 100% !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-titlebar">
+      <span class="titlebar-mark" aria-hidden="true"><img src="../../assets/myholypoly-title.png" alt="" /></span>
+      <span>myholypoly — 숙제 플래너</span>
+      <div class="window-controls" aria-label="창 제어">
+        <button class="window-control minimize-app" type="button" aria-label="창 최소화"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10" /></svg></button>
+        <button class="window-control maximize-app" type="button" aria-label="창 최대화"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" /></svg></button>
+        <button class="window-control close-app" type="button" aria-label="창 닫기"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" /></svg></button>
+      </div>
+    </div>
+    <main class="shell">
+      <header class="topbar">
+        <nav class="main-nav" aria-label="화면 이동">
+          <button type="button" class="nav-item" data-page="progress"><span class="nav-icon nav-icon-progress" aria-hidden="true"></span><span class="nav-label">숙제 체크</span></button>
+          <button type="button" class="nav-item" data-page="overview"><span class="nav-icon nav-icon-overview" aria-hidden="true"></span><span class="nav-label">숙제 한눈에</span></button>
+          <button type="button" class="nav-item" data-page="monthly"><span class="nav-icon nav-icon-monthly" aria-hidden="true"></span><span class="nav-label">시험 달력</span></button>
+          <span class="nav-divider" aria-hidden="true"></span>
+          <button type="button" class="nav-item active" data-page="register"><span class="nav-icon nav-icon-register" aria-hidden="true"></span><span class="nav-label">숙제 가져오기</span></button>
+          <button type="button" class="nav-item" data-page="notes"><span class="nav-icon nav-icon-notes" aria-hidden="true"></span><span class="nav-label">메모장</span></button>
+          <span class="nav-spacer" aria-hidden="true"></span>
+          <button type="button" class="nav-item nav-item-settings" data-page="settings"><span class="nav-icon nav-icon-settings" aria-hidden="true"></span><span class="nav-label">설정</span></button>
+        </nav>
+        <footer class="sidebar-app-info"><span>v0.1.24</span></footer>
+      </header>
+      <section id="registerPage" class="app-page active" aria-label="숙제 가져오기">
+        <div class="page-title register-page-title">
+          <div><p class="eyebrow">POLY 웹에서 숙제를 불러와 등록하세요</p><h1>숙제 가져오기</h1></div>
+        </div>
+        <div class="register-steps" aria-label="일정 등록 단계">
+          <div class="active"><b>1</b><span>POLY 웹 로그인</span></div><i></i>
+          <div><b>2</b><span>숙제 가져오기</span></div><i></i>
+          <div><b>3</b><span>내용 확인·등록</span></div>
+        </div>
+        <div class="register-dashboard">
+          <div class="register-import-column">
+            <section class="register-control-panel" aria-label="POLY 웹에서 숙제 가져오기">
+              <article class="import-card-block poly-web-login-card">
+                <div class="poly-web-card-head">
+                  <p class="import-card-title">POLY 웹</p>
+                  <span class="connection offline">연결 전</span>
+                </div>
+                <div class="poly-web-copy">
+                  <strong>로그인 후 숙제를 가져와요</strong>
+                </div>
+                <button type="button" class="app-launch poly-web-login-button">POLY 웹 열어서 로그인</button>
+              </article>
+              <article class="import-card-block calendar-import-card">
+                <div class="import-card-status">
+                  <p class="import-card-title">숙제 가져오기</p>
+                  <span class="connection offline">로그인 필요</span>
+                </div>
+                <div class="plan-date">
+                  <span>가져올 날짜</span>
+                  <div class="plan-date-control">
+                    <button class="plan-date-arrow" type="button" aria-label="이전 날짜"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m10 3-5 5 5 5" /></svg></button>
+                    <button class="plan-date-current" type="button"><strong>10월 20일 (화)</strong></button>
+                    <button class="plan-date-arrow" type="button" aria-label="다음 날짜"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg></button>
+                  </div>
+                </div>
+                <button type="button" class="command-button load-schedule">선택한 날짜 숙제 불러오기</button>
+                <button type="button" class="command-button open-calendar-secondary">POLY 웹 숙제 화면 열기</button>
+              </article>
+            </section>
+          </div>
+          <div class="register-editor-column">
+            <section class="focus-register" aria-label="가져온 숙제 확인 및 편집">
+              <div class="focus-register-body">
+                <section class="course-workspace">
+                  <div class="course-toolbar">
+                    <div class="course-toolbar-title"><strong>가져온 숙제 확인</strong></div>
+                    <div class="course-toolbar-actions">
+                      <button type="button">＋ 과목 추가</button>
+                      <button type="button">선택 과목 삭제</button>
+                      <button type="button" class="primary">일정 등록</button>
+                    </div>
+                  </div>
+                  <div class="course-stack">
+                    <article class="stacked-course active" style="--course-bg:#7DB2FF;--course-soft:#E7F1FF">
+                      <button type="button" class="course-accordion-head" aria-expanded="true">
+                        <span class="course-accordion-number">1</span>
+                        <span class="course-accordion-summary"><strong>English</strong><small>시작 10.20 · 마감 10.24</small></span>
+                        <span class="course-accordion-chip">D-4</span>
+                        <span class="course-accordion-chip">할 일 3개</span>
+                        <span class="course-accordion-chevron" aria-hidden="true"></span>
+                      </button>
+                      <div class="course-accordion-body">
+                        <div class="stacked-course-head">
+                          <input value="English" placeholder="과목 이름" aria-label="과목 이름" />
+                          <label><span>시작일</span><input value="2026-10-20" aria-label="시작일" /></label>
+                          <label><span>마감일</span><input value="2026-10-24" aria-label="마감일" /></label>
+                        </div>
+                        <div class="focus-course-lines">
+                          <div class="focus-course-entry"><label class="focus-course-line"><span>01</span><span class="task-input-wrap"><input value="TB — Journeys common core" aria-label="첫 번째 숙제" /></span><button type="button">삭제</button></label></div>
+                          <div class="focus-course-entry"><label class="focus-course-line"><span>02</span><span class="task-input-wrap"><input value="Workbook p.24–25" aria-label="두 번째 숙제" /></span><button type="button">삭제</button></label></div>
+                          <div class="focus-course-entry"><label class="focus-course-line"><span>03</span><span class="task-input-wrap"><input value="단어 복습" aria-label="세 번째 숙제" /></span><button type="button">삭제</button></label></div>
+                        </div>
+                        <button class="add-focus-line" type="button">＋ 내용 추가</button>
+                      </div>
+                    </article>
+                  </div>
+                </section>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

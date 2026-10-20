@@ -248,7 +248,6 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
 .hide-completed,
 #registerPage .course-toolbar-actions button,
 #registerPage .import-card-block > button,
-#registerPage .epoly-install-help button,
 .date-picker-foot button {
   min-height: 44px !important;
   border: 3px solid var(--st-ink) !important;
@@ -533,22 +532,21 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
 #registerPage .register-control-panel { display: grid !important; padding: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; gap: 18px !important; }
 #registerPage .import-card-block { padding: 20px !important; }
 #registerPage .import-card-title { margin: 0 0 14px !important; color: var(--st-sub) !important; font-size: 14px !important; font-weight: 400 !important; }
-#registerPage .epoly-row { margin-bottom: 16px !important; }
-#registerPage .epoly-icon { display: grid !important; width: 46px !important; height: 46px !important; border: 2.5px solid var(--st-ink) !important; border-radius: 14px !important; background: var(--st-yellow) !important; color: var(--st-ink) !important; box-shadow: 3px 3px 0 var(--st-ink) !important; place-items: center !important; }
-#registerPage .epoly-icon svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-#registerPage .epoly-icon .source-accent { stroke: #d84b75; }
-#registerPage [data-import-source="app"] .source-symbol-web,
-#registerPage [data-import-source="web"] .source-symbol-app { display: none; }
-#registerPage [data-import-source="web"] .epoly-icon { background: var(--st-pink) !important; }
-#registerPage .import-source-switch { display: grid; margin: 0 0 18px; grid-template-columns: 1fr 1fr; gap: 9px; }
-#registerPage .import-source-switch .import-source-option { display: flex !important; width: 100% !important; min-height: 54px !important; margin: 0 !important; padding: 7px 10px !important; border: 2.5px solid var(--st-ink) !important; border-radius: 15px !important; background: #fff !important; color: var(--st-sub) !important; box-shadow: none !important; align-items: center; justify-content: flex-start; gap: 8px; }
-#registerPage .import-source-switch .import-source-option.active { background: var(--st-yellow) !important; color: var(--st-ink) !important; box-shadow: 3px 3px 0 var(--st-ink) !important; transform: translate(-1px, -1px); }
-#registerPage .import-source-option-icon { display: grid; width: 30px; height: 30px; border: 2px solid currentColor; border-radius: 9px; background: #fff; flex: none; place-items: center; }
-#registerPage .import-source-option-icon svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-#registerPage .import-source-option-icon .source-accent { stroke: #d84b75; }
-#registerPage .epoly-copy strong { color: var(--st-ink) !important; font-size: 16px !important; font-weight: 400 !important; }
-#registerPage .epoly-copy span { margin-top: 4px !important; color: var(--st-sub) !important; font-size: 12px !important; }
-#registerPage .epoly-import-card .app-launch { background: var(--st-pink) !important; }
+#registerPage .poly-web-login-card { padding: 20px !important; }
+#registerPage .poly-web-card-head { display: flex; margin-bottom: 18px; align-items: center; justify-content: space-between; }
+#registerPage .poly-web-card-head .import-card-title { margin: 0 !important; color: var(--st-sub) !important; font-size: 16px !important; }
+#registerPage .poly-web-copy { margin-bottom: 18px; }
+#registerPage .poly-web-copy strong { display: block; color: var(--st-ink); font-size: 18px; font-weight: 400; line-height: 1.35; }
+#registerPage .poly-web-copy p { margin: 5px 0 0; color: var(--st-sub); font-size: 13px; line-height: 1.45; }
+#registerPage .poly-web-login-card > .poly-web-login-button { width: 100% !important; min-height: 56px !important; margin-top: 0 !important; border: 3px solid var(--st-ink) !important; border-radius: var(--st-radius-pill) !important; background: var(--st-pink) !important; box-shadow: var(--st-shadow) !important; color: var(--st-ink) !important; font-size: 16px !important; }
+#registerPage .poly-web-login-card > .poly-web-login-button:hover { background: #FF8EB5 !important; }
+#registerPage .calendar-import-card .import-card-title { margin: 0 !important; }
+#registerPage .calendar-import-card .load-schedule { min-height: 48px !important; margin-top: 16px !important; }
+#registerPage .calendar-import-card .open-calendar-secondary { min-height: 42px !important; margin-top: 10px !important; }
+#registerPage .course-toolbar #sourceLabel { display: none !important; }
+#registerPage .course-accordion-summary { flex-direction: column !important; align-items: flex-start !important; gap: 3px !important; }
+#registerPage .course-accordion-summary small { color: var(--st-sub) !important; }
+#registerPage .focus-course-line > button { min-height: 36px !important; border: 2px solid var(--st-ink) !important; border-radius: 999px !important; background: #fff !important; box-shadow: var(--st-shadow-small) !important; color: #D93A3A !important; font-size: 12px !important; }
 #registerPage .calendar-import-card .load-schedule { background: var(--st-yellow) !important; }
 #registerPage .calendar-import-card .open-calendar-secondary { min-height: 40px !important; margin-top: 10px !important; border: 2px solid var(--st-ink) !important; border-radius: var(--st-radius-pill) !important; background: #fff !important; color: var(--st-sub) !important; box-shadow: var(--st-shadow-small) !important; }
 #registerPage .connection { display: inline-flex !important; min-height: 28px !important; padding: 0 10px !important; border: 2px solid var(--st-ink) !important; border-radius: var(--st-radius-pill) !important; background: var(--st-green) !important; color: var(--st-ink) !important; font-size: 12px !important; align-items: center !important; }
@@ -570,7 +568,6 @@ button { transition: transform 80ms ease, box-shadow 80ms ease, background-color
 #registerPage #planDate:focus,
 #registerPage #planDate:focus-visible { width: 100% !important; height: 48px !important; padding: 0 14px !important; border: 2.5px solid var(--st-ink) !important; border-radius: 12px !important; background: #fff !important; color: var(--st-ink) !important; -webkit-text-fill-color: var(--st-ink) !important; font-size: 15px !important; box-shadow: none !important; }
 #registerPage #planDate:focus { outline: 3px solid var(--st-yellow) !important; }
-#registerPage .epoly-install-help { border: 2px solid var(--st-ink) !important; border-radius: 12px !important; background: #FFF5C9 !important; color: var(--st-ink) !important; }
 
 #registerPage .focus-register { overflow: visible !important; }
 #registerPage .focus-register-body { display: block !important; min-height: 0 !important; }
@@ -826,6 +823,15 @@ select:focus-visible { outline: 3px solid var(--st-yellow) !important; outline-o
 .delete-dialog-actions button:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--st-ink); }
 .delete-dialog-actions button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--st-ink); }
 #deleteScheduleConfirm { background: #FF8A8A; }
+.today-schedule-prompt[hidden] { display: none !important; }
+.today-schedule-prompt { position: fixed; z-index: 11000; inset: 0; display: flex; padding: 24px; background: rgba(27, 40, 69, .5); backdrop-filter: blur(2px); align-items: center; justify-content: center; }
+.today-schedule-prompt-card { width: min(420px, calc(100vw - 48px)); padding: 30px 26px 24px; border: 3px solid var(--st-ink); border-radius: 26px; background: #fff; box-shadow: 6px 6px 0 var(--st-ink); color: var(--st-ink); text-align: center; }
+.today-schedule-prompt-icon { display: grid; width: 52px; height: 52px; margin: 0 auto 14px; border: 3px solid var(--st-ink); border-radius: 17px; background: var(--st-yellow); box-shadow: var(--st-shadow-small); font-size: 29px; place-items: center; }
+.today-schedule-prompt-card h2 { margin: 0; font-size: 23px; font-weight: 400; }
+.today-schedule-prompt-card p { margin: 9px 0 22px; color: var(--st-sub); font-size: 14px; }
+.today-schedule-prompt-actions { display: grid; grid-template-columns: 1fr 1.3fr; gap: 12px; }
+.today-schedule-prompt-actions button { min-height: 46px; border: 3px solid var(--st-ink); border-radius: 999px; background: #fff; box-shadow: var(--st-shadow-small); color: var(--st-ink); font-size: 14px; }
+.today-schedule-prompt-actions #todayScheduleRegister { background: var(--st-pink); }
 .settings-panel { display: grid; max-width: 760px; gap: 18px; }
 .settings-item { display: flex; min-height: 124px; padding: 24px 26px; border: 3px solid var(--st-ink); border-radius: 28px; background: #fff; box-shadow: 5px 5px 0 var(--st-ink); align-items: center; gap: 20px; }
 .settings-item-icon { width: 62px; height: 62px; border: 3px solid var(--st-ink); border-radius: 18px; background: var(--st-yellow) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 8.5h14v10H5zM8 8.5V6h8v2.5M9 13h6' fill='none' stroke='%231B2845' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/32px no-repeat; box-shadow: 3px 3px 0 var(--st-ink); flex: none; }
@@ -1041,3 +1047,57 @@ select:focus-visible { outline: 3px solid var(--st-yellow) !important; outline-o
 .monthly-calendar-header strong{order:1;margin-right:auto;text-align:left;font-size:17px;font-weight:400}
 .monthly-calendar-header #monthlyPrevious{order:2}.monthly-calendar-header #monthlyNext{order:3}
 .monthly-calendar-header button{width:34px;height:34px;border-width:2.5px;box-shadow:2px 2px 0 #1b2845;font-size:23px}
+
+/* Notebook-style notes with a searchable list and lined writing area. */
+#notesPage .notes-page-title { min-height: 86px !important; align-items: flex-end !important; justify-content: space-between !important; }
+#notesPage .notes-panel.notebook-layout { display: grid !important; height: calc(100vh - 250px) !important; min-height: 390px !important; grid-template-columns: 290px minmax(0, 1fr) !important; gap: 18px !important; }
+#notesPage .notebook-sidebar,
+#notesPage .notebook-editor { min-width: 0; min-height: 0; overflow: hidden; border: 3px solid var(--st-ink); border-radius: 22px; background: #fff; box-shadow: var(--st-shadow); }
+#notesPage .notebook-sidebar { display: flex; padding: 14px 12px 12px; flex-direction: column; }
+#notesPage .notebook-sidebar-tools { display: grid; flex: none; gap: 10px; }
+#notesPage #noteSearch { width: 100%; height: 44px; padding: 0 14px; border: 2.5px solid var(--st-ink); border-radius: var(--st-radius-pill); background: #fff; color: var(--st-ink); font: 400 14px var(--st-font); }
+#notesPage #noteSearch::placeholder { color: #8E98B3; }
+#notesPage #noteSearch:focus-visible { outline: 3px solid var(--st-blue); outline-offset: 2px; }
+#notesPage .notebook-add-button { min-height: 44px; border: 3px solid var(--st-ink); border-radius: var(--st-radius-pill); background: var(--st-pink); box-shadow: 3px 3px 0 var(--st-ink); color: var(--st-ink); font: 400 15px var(--st-font); cursor: pointer; }
+#notesPage .notebook-add-button:hover { background: #FF8EB5; }
+#notesPage .notebook-add-button:disabled { background: #E4E8EE; color: #8B94A8; cursor: not-allowed; }
+#notesPage .notebook-note-count { margin: 12px 4px 7px; color: var(--st-sub); font-size: 12px; }
+#notesPage .note-limit-message { position: static; width: auto; max-width: none; margin: 0 2px 8px; padding: 7px 9px; border: 2px solid var(--st-ink); border-radius: 10px; background: #FFF5C9; box-shadow: none; font-size: 12px; white-space: normal; }
+#notesPage .notes-list { display: flex !important; min-height: 0; overflow: auto; flex: 1; flex-direction: column; gap: 6px !important; }
+#notesPage .notebook-note { display: grid; width: 100%; min-height: 72px; padding: 9px 11px; border: 2.5px solid transparent; border-radius: 14px; background: transparent; color: var(--st-ink); cursor: pointer; grid-template-columns: minmax(0, 1fr); gap: 3px; text-align: left; }
+#notesPage .notebook-note:hover { background: #F2F8FF; }
+#notesPage .notebook-note.selected { border-color: var(--st-ink); box-shadow: 3px 3px 0 var(--st-ink); }
+#notesPage .notebook-note-yellow.selected { background: var(--st-yellow); }
+#notesPage .notebook-note-pink.selected { background: var(--st-pink); }
+#notesPage .notebook-note-blue.selected { background: var(--st-blue); }
+#notesPage .notebook-note-green.selected { background: var(--st-green); }
+#notesPage .notebook-note strong { overflow: hidden; font-size: 15px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+#notesPage .notebook-note span { overflow: hidden; color: var(--st-sub); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+#notesPage .notebook-note time { color: #8E98B3; font-size: 11px; }
+#notesPage .notebook-list-empty { margin: 18px 6px; color: var(--st-sub); font-size: 13px; text-align: center; }
+#notesPage .notebook-editor { display: grid; background: #fff; }
+#notesPage .notebook-editor-content { display: grid; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
+#notesPage .notebook-editor-content[hidden],
+#notesPage .notebook-empty[hidden] { display: none !important; }
+#notesPage .notebook-editor-toolbar { display: flex; min-height: 54px; padding: 8px 15px; border-bottom: 2px dotted var(--st-grid); align-items: center; justify-content: space-between; gap: 12px; }
+#notesPage .notebook-editor-toolbar > div:first-child { display: flex; min-width: 0; color: #8E98B3; font-size: 12px; flex-wrap: wrap; gap: 6px; }
+#notesPage .notebook-editor-actions,
+#notesPage .notebook-colors { display: flex; align-items: center; gap: 7px; }
+#notesPage .notebook-colors button { width: 19px; height: 19px; min-width: 19px; min-height: 19px; padding: 0; border: 2px solid var(--st-ink); border-radius: 50%; box-shadow: none; cursor: pointer; }
+#notesPage .notebook-colors button[data-note-color="yellow"] { background: var(--st-yellow); }
+#notesPage .notebook-colors button[data-note-color="pink"] { background: var(--st-pink); }
+#notesPage .notebook-colors button[data-note-color="blue"] { background: var(--st-blue); }
+#notesPage .notebook-colors button[data-note-color="green"] { background: var(--st-green); }
+#notesPage .notebook-colors button[aria-pressed="true"] { outline: 2px solid var(--st-ink); outline-offset: 2px; }
+#notesPage .notebook-delete-button { display: grid; width: 29px; height: 29px; min-height: 29px; padding: 0; border: 2px solid var(--st-ink); border-radius: 50%; background: #fff; box-shadow: none; color: #D93A3A; font: 400 20px var(--st-font); line-height: 1; place-items: center; cursor: pointer; }
+#notesPage .notebook-paper { width: 100%; height: 100%; min-height: 0; margin: 0; padding: 2px 24px 20px 66px; resize: none; border: 0; border-radius: 0 0 18px 18px; outline: 0; background-color: #fff; background-image: linear-gradient(90deg, transparent 0 50px, #F4A6A6 50px 52px, transparent 52px), repeating-linear-gradient(transparent 0 35px, #CFE0F5 35px 37px); color: var(--st-ink); font: 400 18px/37px var(--st-font); white-space: pre-wrap; }
+#notesPage .notebook-paper::placeholder { color: #8E98B3; opacity: 1; }
+#notesPage .notebook-paper:focus-visible { box-shadow: inset 0 0 0 3px rgba(125,178,255,.35); }
+#notesPage .notebook-empty { display: grid; min-height: 300px; padding: 20px; color: var(--st-sub); font-size: 15px; text-align: center; place-items: center; }
+@media (max-width: 760px) {
+  #notesPage .notes-panel.notebook-layout { height: auto !important; min-height: 0 !important; grid-template-columns: minmax(0, 1fr) !important; }
+  #notesPage .notebook-sidebar { height: 245px; }
+  #notesPage .notebook-editor { min-height: 430px; }
+  #notesPage .notebook-editor-toolbar { padding: 7px 10px; }
+  #notesPage .notebook-paper { padding-right: 12px; padding-left: 58px; }
+}

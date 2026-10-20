@@ -20,15 +20,6 @@ contextBridge.exposeInMainWorld('myholypoly', {
     minimize: () => ipcRenderer.invoke('window:minimize'),
     toggleMaximize: () => ipcRenderer.invoke('window:toggle-maximize')
   },
-  epoly: {
-    status: () => ipcRenderer.invoke('epoly:status'),
-    launch: () => ipcRenderer.invoke('epoly:launch'),
-    openHomework: () => ipcRenderer.invoke('epoly:open-homework'),
-    todayHomework: () => ipcRenderer.invoke('epoly:today-homework'),
-    dateHomework: date => ipcRenderer.invoke('epoly:date-homework', date),
-    openCalendar: () => ipcRenderer.invoke('epoly:open-calendar'),
-    openInstallGuide: () => ipcRenderer.invoke('epoly:open-install-guide')
-  },
   polyWeb: {
     open: () => ipcRenderer.invoke('poly-web:open'),
     status: () => ipcRenderer.invoke('poly-web:status'),

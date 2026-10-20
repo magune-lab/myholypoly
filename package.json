@@ -1,10 +1,10 @@
 {
   "name": "myholypoly",
-  "version": "0.1.23",
+  "version": "0.1.24",
   "private": true,
   "author": "magune-lab",
   "license": "MIT",
-  "description": "A Windows companion for e-POLY homework planning.",
+  "description": "A Windows companion for POLY web homework planning.",
   "main": "src/main.mjs",
   "scripts": {
     "dev": "electron .",

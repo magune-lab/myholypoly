@@ -58,5 +58,5 @@ jobs:
           } else {
             gh release create $tag $installer "distribution\magune-lab.cer" $checksumFile `
               --title "myholypoly $tag" `
-              --notes "Windows용 e-POLY 숙제 플래너 릴리즈입니다. 최신 기능 개선과 오류 수정을 포함합니다."
+              --notes "Windows용 POLY 웹 숙제 플래너 릴리즈입니다. 최신 기능 개선과 오류 수정을 포함합니다."
           }

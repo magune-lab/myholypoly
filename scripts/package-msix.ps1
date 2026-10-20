@@ -88,7 +88,7 @@ try {
   <Properties><DisplayName>myholypoly</DisplayName><PublisherDisplayName>magune-lab</PublisherDisplayName><Logo>Assets\StoreLogo.png</Logo></Properties>
   <Resources><Resource Language="ko-kr" /></Resources>
   <Dependencies><TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26200.0" /></Dependencies>
-  <Applications><Application Id="myholypoly" Executable="myholypoly.exe" EntryPoint="Windows.FullTrustApplication"><uap:VisualElements DisplayName="myholypoly" Description="e-POLY homework planner" BackgroundColor="transparent" Square44x44Logo="Assets\Square44x44Logo.png" Square150x150Logo="Assets\Square150x150Logo.png"><uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" /></uap:VisualElements></Application></Applications>
+  <Applications><Application Id="myholypoly" Executable="myholypoly.exe" EntryPoint="Windows.FullTrustApplication"><uap:VisualElements DisplayName="myholypoly" Description="POLY web homework planner" BackgroundColor="transparent" Square44x44Logo="Assets\Square44x44Logo.png" Square150x150Logo="Assets\Square150x150Logo.png"><uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" /></uap:VisualElements></Application></Applications>
   <Capabilities><rescap:Capability Name="runFullTrust" /></Capabilities>
 </Package>
 "@

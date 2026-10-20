@@ -238,8 +238,6 @@ let pageHistory = ['overview'];
 let pageHistoryIndex = 0;
 const scopeStorageKey = 'myholypoly.scheduleScope';
 const hideCompletedStorageKey = 'myholypoly.hideCompleted';
-const importSourceStorageKey = 'myholypoly.importSource';
-let importSource = localStorage.getItem(importSourceStorageKey) === 'web' ? 'web' : 'app';
 const validScopes = ['urgent', 'today', 'week', 'all'];
 const storedScope = localStorage.getItem(scopeStorageKey);
 let overviewScope = validScopes.includes(storedScope) ? storedScope : 'all';
@@ -361,7 +359,7 @@ function openDatePicker(input, anchor = input) {
 function closeDatePicker() { $('#datePickerPopover').hidden = true; activeDateInput = null; }
 function bindDatePicker(input, trigger = input) { trigger.onclick = event => { event.stopPropagation(); openDatePicker(input, trigger); }; trigger.onkeydown = event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openDatePicker(input, trigger); } if (event.key === 'Escape') closeDatePicker(); }; }
 function setMessage(message, isError = false) { const node = $('#message'); node.textContent = String(message || '').replace(/^Error invoking remote method '[^']+': Error:\s*/i, ''); node.classList.toggle('error', isError); }
-function setStepMessage(step, message = '', type = 'info') { const node = $('#importMessage'); if (!node) return; const text = String(message || '').replace(/^Error invoking remote method '[^']+': Error:\s*/i, ''); const steps = [...document.querySelectorAll('#registerSteps > div')]; const target = steps[Math.max(1, Math.min(4, step)) - 1]; if (target && node.parentElement !== target) target.append(node); node.hidden = !text; node.textContent = text; node.dataset.type = type; }
+function setStepMessage(step, message = '', type = 'info') { const node = $('#importMessage'); if (!node) return; const text = String(message || '').replace(/^Error invoking remote method '[^']+': Error:\s*/i, ''); const steps = [...document.querySelectorAll('#registerSteps > div')]; const target = steps[Math.max(1, Math.min(3, step)) - 1]; if (target && node.parentElement !== target) target.append(node); node.hidden = !text; node.textContent = text; node.dataset.type = type; }
 function setImportMessage(message = '', type = 'info') { setStepMessage(3, message, type); }
 function renderCourses() {
   const editor = $('#courseEditor');
@@ -521,7 +519,7 @@ function renderGantt() {
 function renderProgressFocus() { const items = allItems(); const tasks = items.flatMap(item => lines(item).map((text, index) => ({ item, text, done: Boolean(item.done?.[index]) }))); const remaining = tasks.filter(task => !task.done); const dueSoon = items.filter(item => { const diff = dayDiff(item.dueDate); return diff !== '' && diff >= 0 && diff <= 3 && lines(item).some((_, index) => !item.done?.[index]); }).length; $('#progressSummary').innerHTML = `<div><span>남은 할 일</span><strong>${remaining.length}</strong></div><div><span>마감 임박</span><strong>${dueSoon}</strong></div><div><span>완료</span><strong>${tasks.length - remaining.length}<small> / ${tasks.length}</small></strong></div>`; const focus = $('#focusList'); if (!remaining.length) { focus.innerHTML = '<div class="focus-empty">오늘은 남은 숙제가 없습니다.</div>'; return; } focus.innerHTML = remaining.sort((a, b) => (a.item.dueDate || '9999').localeCompare(b.item.dueDate || '9999')).slice(0, 6).map(task => { const diff = dayDiff(task.item.dueDate); const label = diff === '' ? '' : diff === 0 ? 'D-day' : `D-${diff}`; return `<div class="focus-item"><span class="focus-check"></span><div><strong>${escapeHtml(task.text)}</strong><small>${escapeHtml(task.item.title)}</small></div><span>${label}</span></div>`; }).join(''); }
 function showRegistered(planData) { savedPlans = planData?.plans || savedPlans; updateMonthPicker(); renderChecklist(); renderProgressFocus(); renderGantt(); }
 function setRegisterStep(step, { allowBack = false } = {}) {
-  const nextStep = Math.max(1, Math.min(4, step));
+  const nextStep = Math.max(1, Math.min(3, step));
   registerStep = allowBack ? nextStep : Math.max(registerStep, nextStep);
   const steps = [...document.querySelectorAll('#registerSteps > div')];
   const lines = [...document.querySelectorAll('#registerSteps > i')];
@@ -531,62 +529,20 @@ function setRegisterStep(step, { allowBack = false } = {}) {
 async function refreshStatus() {
   if (statusRefreshPromise) return statusRefreshPromise;
   statusRefreshPromise = (async () => {
-    if (!bridge?.epoly) throw new Error('앱 연결을 시작하지 못했습니다. myholypoly를 다시 실행하세요.');
-    if (importSource === 'web') {
-      const status = await bridge.polyWeb.status();
-      $('#connection').className = `connection ${status.loggedIn ? 'online' : 'offline'}`;
-      $('#connection').textContent = status.loggedIn ? '연결됨' : status.opened ? '로그인 대기' : '연결 대기';
-      $('#connectionCopy').textContent = status.loggedIn ? (status.homeworkOpen ? 'POLY 웹 Homework 화면이 열려 있습니다.' : 'POLY 웹에 로그인되어 있습니다.') : 'POLY 웹 로그인 버튼을 눌러 로그인해 주세요.';
-      $('#epolyInstallHelp').hidden = true;
-      $('#launchEpoly').disabled = false;
-      $('#getToday').disabled = !status.loggedIn;
-      $('#openCalendar').disabled = !status.loggedIn;
-      const currentStep = status.homeworkOpen ? 3 : status.loggedIn ? 2 : 1;
-      setRegisterStep(currentStep, { allowBack: true });
-      return status;
-    }
-    const status = await bridge.epoly.status();
-    $('#connection').className = `connection ${status.connected ? 'online' : 'offline'}`;
-    $('#connection').textContent = status.connected ? '연결됨' : status.installed ? '연결 대기' : '미설치';
-    $('#connectionCopy').textContent = status.connected ? (status.calendarOpen ? 'e-POLY 캘린더가 열려 있습니다.' : 'e-POLY가 열려 있습니다.') : status.installed ? '연동 모드로 e-POLY를 열어 주세요.' : 'PC 설치 가이드를 보고 e-POLY를 설치한 후 다시 시도해 주세요.';
-    if (importSource === 'app') {
-      $('#epolyInstallHelp').hidden = status.installed;
-      $('#launchEpoly').disabled = !status.installed;
-    }
-    ['#getToday','#openCalendar'].forEach(selector => $(selector).disabled = !status.connected);
-    const currentStep = status.calendarOpen ? 3 : status.connected ? 2 : 1;
-    const message = $('#importMessage');
-    const messageStep = [...document.querySelectorAll('#registerSteps > div')].indexOf(message.parentElement) + 1;
-    if (!message.hidden && messageStep > currentStep) setStepMessage(currentStep, '');
-    setRegisterStep(currentStep, { allowBack: true });
+    if (!bridge?.polyWeb) throw new Error('앱 연결을 시작하지 못했습니다. myholypoly를 다시 실행하세요.');
+    const status = await bridge.polyWeb.status();
+    $('#connection').className = `connection ${status.loggedIn ? 'online' : 'offline'}`;
+    $('#connection').textContent = status.loggedIn ? '연결됨' : status.opened ? '로그인 대기' : '연결 전';
+    $('#importAvailability').textContent = status.loggedIn ? '가져올 수 있어요' : '로그인 필요';
+    $('#importAvailability').className = `connection ${status.loggedIn ? 'online' : 'offline'}`;
+    $('#connectionCopy').textContent = status.loggedIn ? (status.homeworkOpen ? 'POLY 웹 Homework 화면이 열려 있습니다.' : 'POLY 웹에 로그인되어 있습니다.') : 'POLY 웹 로그인 버튼을 눌러 로그인해 주세요.';
+    $('#getToday').disabled = !status.loggedIn;
+    $('#openCalendar').disabled = !status.loggedIn;
+    if (registerStep < 3) setRegisterStep(status.loggedIn ? 2 : 1, { allowBack: true });
     return status;
   })();
   try { return await statusRefreshPromise; }
   finally { statusRefreshPromise = null; }
-}
-
-function renderImportSource() {
-  const web = importSource === 'web';
-  $('#importSourceCard').dataset.importSource = importSource;
-  $('#importSourceApp').classList.toggle('active', !web);
-  $('#importSourceApp').setAttribute('aria-pressed', String(!web));
-  $('#importSourceWeb').classList.toggle('active', web);
-  $('#importSourceWeb').setAttribute('aria-pressed', String(web));
-  $('#importStartStepLabel').textContent = web ? 'POLY 웹 로그인' : 'e-POLY 실행';
-  $('#importSourceHeading').textContent = web ? 'POLY 웹에서 가져오기' : 'e-POLY 앱에서 가져오기';
-  $('#importSourceDescription').textContent = web ? '로그인 후 웹 숙제를 불러와요' : '앱 캘린더의 숙제를 불러와요';
-  $('#launchEpoly').textContent = web ? 'POLY 웹 로그인' : 'e-POLY 실행';
-  $('#launchEpoly').disabled = false;
-  if (web) $('#epolyInstallHelp').hidden = true;
-  else refreshStatus().catch(error => setStepMessage(1, error.message, 'error'));
-}
-
-function selectImportSource(nextSource) {
-  importSource = nextSource;
-  localStorage.setItem(importSourceStorageKey, importSource);
-  setStepMessage(1, '');
-  setRegisterStep(1, { allowBack: true });
-  renderImportSource();
 }
 
 let progressScope = overviewScope;
@@ -626,38 +582,22 @@ $('#datePickerBackToMonths').onclick = event => { event.stopPropagation(); dateP
 $('#datePickerToday').onclick = event => { event.stopPropagation(); if (!activeDateInput) return; activeDateInput.value = today; activeDateInput.dispatchEvent(new Event('input', { bubbles: true })); closeDatePicker(); };
 $('#datePickerPopover').onclick = event => event.stopPropagation();
 document.addEventListener('click', closeDatePicker);
-$('#addTask').onclick = () => { if (courses.length >= maxCourses) { setMessage(`과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, true); return setStepMessage(4, `과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, 'error'); } courses.push({ title: '', detail: '', dueDate: '', startDate: $('#planDate').value }); activeCourseIndex = courses.length - 1; renderCourses(); requestAnimationFrame(() => $('#courseEditor .stacked-course:last-child')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })); };
-$('#importSourceApp').onclick = () => selectImportSource('app');
-$('#importSourceWeb').onclick = () => selectImportSource('web');
-renderImportSource();
-$('#launchEpoly').onclick = async () => {
-  if (importSource === 'web') {
-    setStepMessage(1, 'POLY 웹 로그인 화면을 열고 있습니다.');
-    try {
-      await bridge.polyWeb.open();
-      setStepMessage(1, '로그인 후 Homework 화면을 열어 주세요.', 'success');
-      setMessage('POLY 웹 로그인 창을 열었습니다.');
-    } catch (error) {
-      setMessage(error.message, true);
-      setStepMessage(1, error.message, 'error');
-    }
-    return;
-  }
-  setStepMessage(1, 'e-POLY를 실행하고 있습니다.');
+$('#addTask').onclick = () => { if (courses.length >= maxCourses) { setMessage(`과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, true); return setStepMessage(3, `과목은 최대 ${maxCourses}개까지 추가할 수 있습니다.`, 'error'); } courses.push({ title: '', detail: '', dueDate: '', startDate: $('#planDate').value }); activeCourseIndex = courses.length - 1; renderCourses(); requestAnimationFrame(() => $('#courseEditor .stacked-course:last-child')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })); };
+$('#launchPolyWeb').onclick = async () => {
   try {
-    await bridge.epoly.launch();
-    setStepMessage(1, 'e-POLY를 실행했습니다.', 'success');
-    setRegisterStep(2);
-    setMessage('e-POLY를 여는 중입니다.');
-    setTimeout(() => refreshStatus().catch(error => setStepMessage(1, error.message, 'error')), 1500);
+    setRegisterStep(1, { allowBack: true });
+    setStepMessage(1, 'POLY 웹 로그인 화면을 열고 있습니다.');
+    await bridge.polyWeb.open();
+    setStepMessage(1, '로그인 후 숙제를 가져와 주세요.', 'success');
+    setMessage('POLY 웹 로그인 창을 열었습니다.');
+    setTimeout(() => refreshStatus().catch(error => setStepMessage(1, error.message, 'error')), 1000);
   } catch (error) {
     setMessage(error.message, true);
     setStepMessage(1, error.message, 'error');
   }
 };
-$('#openEpolyInstallGuide').onclick = () => bridge.epoly.openInstallGuide();
-$('#openCalendar').onclick = async () => { setStepMessage(2, '캘린더를 열고 있습니다.'); try { const result = importSource === 'web' ? await bridge.polyWeb.openHomework() : await bridge.epoly.openCalendar(); if (!result.opened) { setMessage(result.message, true); return setStepMessage(2, result.message, 'error'); } setStepMessage(2, '캘린더를 열었습니다.', 'success'); setRegisterStep(3); setMessage(importSource === 'web' ? 'POLY 웹 Homework를 열었습니다.' : 'e-POLY 캘린더를 여는 중입니다.'); setTimeout(() => refreshStatus().catch(error => setStepMessage(2, error.message, 'error')), 1200); } catch (error) { setMessage(error.message, true); setStepMessage(2, error.message, 'error'); } };
-$('#getToday').onclick = async () => { const selectedDate = $('#planDate').value; const button = $('#getToday'); setEditingMode(); setRegisterStep(3, { allowBack: true }); setStepMessage(3, `${selectedDate} 일정을 확인하고 있습니다.`); button.disabled = true; try { const isWeb = importSource === 'web'; const isToday = selectedDate === today; const result = isWeb ? await bridge.polyWeb.dateHomework(selectedDate) : isToday ? await bridge.epoly.todayHomework() : await bridge.epoly.dateHomework(selectedDate); source = isWeb ? 'poly-web' : isToday ? 'epoly-today' : 'epoly-date'; $('#sourceLabel').textContent = isWeb ? `POLY 웹 ${selectedDate}` : isToday ? 'e-POLY 오늘' : `e-POLY ${selectedDate}`; if (!result.tasks.length) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(3, { allowBack: true }); setMessage(''); return setStepMessage(3, `${selectedDate}에 등록된 숙제가 없습니다.`, 'empty'); } setCourses(result.tasks); setRegisterStep(4); setMessage(`${selectedDate} 숙제를 가져왔습니다.`); setStepMessage(4, `${result.tasks.length}개 과목을 가져왔습니다. 내용을 확인해 주세요.`, 'success'); } catch (error) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(3, { allowBack: true }); setMessage(error.message, true); setStepMessage(3, error.message, 'error'); } finally { button.disabled = false; } };
+$('#openCalendar').onclick = async () => { setStepMessage(2, 'POLY 웹 Homework 화면을 열고 있습니다.'); try { const result = await bridge.polyWeb.openHomework(); if (!result.opened) { setMessage(result.message, true); return setStepMessage(2, result.message, 'error'); } setStepMessage(2, '숙제를 가져올 날짜를 선택해 주세요.', 'success'); setRegisterStep(2); setMessage('POLY 웹 Homework 화면을 열었습니다.'); setTimeout(() => refreshStatus().catch(error => setStepMessage(2, error.message, 'error')), 1200); } catch (error) { setMessage(error.message, true); setStepMessage(2, error.message, 'error'); } };
+$('#getToday').onclick = async () => { const selectedDate = $('#planDate').value; const button = $('#getToday'); setEditingMode(); setRegisterStep(2, { allowBack: true }); setStepMessage(2, `${selectedDate} 숙제를 확인하고 있습니다.`); button.disabled = true; try { const result = await bridge.polyWeb.dateHomework(selectedDate); source = 'poly-web'; $('#sourceLabel').textContent = `POLY 웹 ${selectedDate}`; if (!result.tasks.length) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(3); setMessage(''); return setStepMessage(3, `${selectedDate}에 등록된 숙제가 없습니다.`, 'empty'); } setCourses(result.tasks); setRegisterStep(3); setMessage(`${selectedDate} 숙제를 가져왔습니다.`); setStepMessage(3, `${result.tasks.length}개 과목을 가져왔습니다. 내용을 확인해 주세요.`, 'success'); } catch (error) { setCourses([{ title: '', detail: '', dueDate: '', startDate: selectedDate }]); setRegisterStep(2, { allowBack: true }); setMessage(error.message, true); setStepMessage(2, error.message, 'error'); } finally { button.disabled = false; } };
 function updateHistoryControls() {
   if ($('#historyBack')) $('#historyBack').disabled = pageHistoryIndex <= 0;
   if ($('#historyForward')) $('#historyForward').disabled = pageHistoryIndex >= pageHistory.length - 1;
@@ -736,9 +676,19 @@ function showPage(page, { record = true } = {}) {
   if (page === 'notes') renderNotes();
   updateHistoryControls();
 }
+function closeTodaySchedulePrompt() { $('#todaySchedulePrompt').hidden = true; }
+$('#todayScheduleLater').onclick = closeTodaySchedulePrompt;
+$('#todayScheduleRegister').onclick = () => {
+  closeTodaySchedulePrompt();
+  showPage('register');
+  $('#planDateButton').focus();
+};
+$('#todaySchedulePrompt').addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeTodaySchedulePrompt();
+});
 function goBack() { if (pageHistoryIndex <= 0) return; pageHistoryIndex -= 1; showPage(pageHistory[pageHistoryIndex], { record: false }); }
 function goForward() { if (pageHistoryIndex >= pageHistory.length - 1) return; pageHistoryIndex += 1; showPage(pageHistory[pageHistoryIndex], { record: false }); }
-$('#register').onclick = async () => { const value = draft(); if (!value.date || !value.items.length) { setMessage('날짜와 과목을 하나 이상 입력하세요.', true); return setStepMessage(4, '날짜와 과목을 하나 이상 입력하세요.', 'error'); } try { if (editingTarget) await bridge.plan.updateItem(editingTarget, value.items[0]); else await bridge.plan.register(value); const wasEditing = Boolean(editingTarget); const registeredFocusKey = courseKey(value.items[0].title, value.items[0].dueDate); const plans = await bridge.plan.read(); setEditingMode(); source = 'manual'; $('#sourceLabel').textContent = '직접 입력'; setCourses([{ title: '', detail: '', dueDate: '', startDate: $('#planDate').value }]); setRegisterStep(1, { allowBack: true }); setStepMessage(4, wasEditing ? '일정을 수정했습니다.' : '일정을 등록했습니다.', 'success'); showRegistered(plans); prepareProgressFocus(registeredFocusKey); showPage('progress'); setMessage(wasEditing ? '일정을 수정했습니다.' : '등록했습니다.'); } catch (error) { setMessage(error.message, true); setStepMessage(4, error.message, 'error'); } };
+$('#register').onclick = async () => { const value = draft(); if (!value.date || !value.items.length) { setMessage('날짜와 과목을 하나 이상 입력하세요.', true); return setStepMessage(3, '날짜와 과목을 하나 이상 입력하세요.', 'error'); } try { if (editingTarget) await bridge.plan.updateItem(editingTarget, value.items[0]); else await bridge.plan.register(value); const wasEditing = Boolean(editingTarget); const registeredFocusKey = courseKey(value.items[0].title, value.items[0].dueDate); const plans = await bridge.plan.read(); setEditingMode(); source = 'manual'; $('#sourceLabel').textContent = '직접 입력'; setCourses([{ title: '', detail: '', dueDate: '', startDate: $('#planDate').value }]); setRegisterStep(1, { allowBack: true }); setStepMessage(3, wasEditing ? '일정을 수정했습니다.' : '일정을 등록했습니다.', 'success'); showRegistered(plans); prepareProgressFocus(registeredFocusKey); showPage('progress'); setMessage(wasEditing ? '일정을 수정했습니다.' : '등록했습니다.'); } catch (error) { setMessage(error.message, true); setStepMessage(3, error.message, 'error'); } };
 $('.main-nav').onclick = event => { const button = event.target.closest('.nav-item'); if (button) showPage(button.dataset.page); };
 if ($('#historyBack')) $('#historyBack').onclick = goBack;
 if ($('#historyForward')) $('#historyForward').onclick = goForward;
@@ -756,15 +706,111 @@ const notesStorageKey = 'myholypoly.notes';
 const noteLimit = 9;
 let noteLimitMessageTimer = null;
 let notes = (() => { try { return JSON.parse(localStorage.getItem(notesStorageKey) || '[]'); } catch { return []; } })();
+let selectedNoteId = notes[0]?.id || null;
+const noteColors = {
+  yellow: '#FFD84D',
+  pink: '#FF9EC0',
+  blue: '#7DB2FF',
+  green: '#5ED6A0'
+};
 function saveNotes() { localStorage.setItem(notesStorageKey, JSON.stringify(notes)); }
 function noteDate(value) { return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value)); }
-function syncNoteLimit() { const count = notes.length; const reached = count >= noteLimit; $('#noteCount').textContent = `${Math.min(count, noteLimit)} / ${noteLimit}`; $('#addNote').disabled = reached; $('#addNote').setAttribute('aria-disabled', String(reached)); const control = $('.notes-add-control'); control.dataset.limitReached = String(reached); control.title = reached ? `메모는 최대 ${noteLimit}개까지 만들 수 있어요` : ''; if (!reached) { clearTimeout(noteLimitMessageTimer); $('#noteLimitMessage').hidden = true; } }
+function noteContent(note) {
+  const body = String(note.body || '');
+  const title = String(note.title || '');
+  return title && body !== title && !body.startsWith(`${title}\n`) && !body.startsWith(`${title}\r\n`) ? `${title}\n${body}` : body;
+}
+function noteTitle(note) { return noteContent(note).split(/\r?\n/, 1)[0].trim() || '제목 없는 메모'; }
+function syncNoteLimit() {
+  const reached = notes.length >= noteLimit;
+  $('#noteCount').textContent = `${Math.min(notes.length, noteLimit)} / ${noteLimit}`;
+  $('#addNote').disabled = reached;
+  $('#addNote').setAttribute('aria-disabled', String(reached));
+  if (!reached) {
+    clearTimeout(noteLimitMessageTimer);
+    $('#noteLimitMessage').hidden = true;
+  }
+}
 function showNoteLimitMessage() { const message = $('#noteLimitMessage'); clearTimeout(noteLimitMessageTimer); message.hidden = false; noteLimitMessageTimer = setTimeout(() => { message.hidden = true; }, 2400); }
-function renderNotes() { const host = $('#notesList'); if (!host) return; syncNoteLimit(); if (!notes.length) { host.innerHTML = '<div class="notes-empty"><span aria-hidden="true"></span><strong>아직 작성한 메모가 없습니다.</strong><small>오른쪽 위 + 버튼을 눌러 메모를 추가하세요.</small></div>'; return; } host.innerHTML = notes.map(note => `<article class="note-card" data-note-id="${note.id}"><div class="note-card-head"><input data-note-title value="${escapeHtml(note.title)}" placeholder="메모 제목" aria-label="메모 제목"><button type="button" data-delete-note aria-label="메모 삭제">삭제</button></div><textarea data-note-body placeholder="메모 내용을 입력하세요" aria-label="메모 내용">${escapeHtml(note.body)}</textarea><footer>${noteDate(note.updatedAt)}</footer></article>`).join(''); }
-function createNote() { if (notes.length >= noteLimit) return showNoteLimitMessage(); const note = { id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, title: '', body: '', updatedAt: new Date().toISOString() }; notes.unshift(note); saveNotes(); renderNotes(); if (notes.length === noteLimit) showNoteLimitMessage(); requestAnimationFrame(() => $('#notesList [data-note-title]')?.focus()); }
+function renderNotes() {
+  const host = $('#notesList');
+  if (!host) return;
+  syncNoteLimit();
+  const query = $('#noteSearch').value.trim().toLocaleLowerCase();
+  const visibleNotes = notes.filter(note => `${noteTitle(note)} ${noteContent(note)}`.toLocaleLowerCase().includes(query));
+  if (!visibleNotes.some(note => note.id === selectedNoteId)) selectedNoteId = visibleNotes[0]?.id || null;
+  host.innerHTML = visibleNotes.length
+    ? visibleNotes.map(note => {
+      const content = noteContent(note);
+      const excerpt = content.split(/\r?\n/).slice(1).join(' ').trim() || '내용 없음';
+      const color = Object.prototype.hasOwnProperty.call(noteColors, note.color) ? note.color : 'yellow';
+      return `<button type="button" class="notebook-note notebook-note-${color}${note.id === selectedNoteId ? ' selected' : ''}" role="listitem" data-select-note="${escapeHtml(note.id)}" aria-current="${note.id === selectedNoteId ? 'true' : 'false'}"><strong>${escapeHtml(noteTitle(note))}</strong><span>${escapeHtml(excerpt)}</span><time>${noteDate(note.updatedAt)}</time></button>`;
+    }).join('')
+    : `<p class="notebook-list-empty">${notes.length ? '검색 결과가 없어요.' : '아직 작성한 메모가 없어요.'}</p>`;
+  const selected = notes.find(note => note.id === selectedNoteId);
+  $('#notebookEmpty').hidden = Boolean(selected);
+  $('#noteEditorContent').hidden = !selected;
+  if (!selected) return;
+  const color = Object.prototype.hasOwnProperty.call(noteColors, selected.color) ? selected.color : 'yellow';
+  $('#noteBody').value = noteContent(selected);
+  $('#noteBody').dataset.noteId = selected.id;
+  $('#noteEditorContent').dataset.noteColor = color;
+  $('#noteUpdatedAt').textContent = `${noteDate(selected.updatedAt)} · 저장됐어요 ✓`;
+  $('#noteSaveStatus').textContent = '';
+  document.querySelectorAll('.notebook-colors [data-note-color]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.noteColor === color)));
+}
+function createNote() {
+  if (notes.length >= noteLimit) return showNoteLimitMessage();
+  const note = { id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, title: '', body: '', color: 'yellow', updatedAt: new Date().toISOString() };
+  notes.unshift(note);
+  selectedNoteId = note.id;
+  $('#noteSearch').value = '';
+  saveNotes();
+  renderNotes();
+  if (notes.length === noteLimit) showNoteLimitMessage();
+  requestAnimationFrame(() => $('#noteBody').focus());
+}
 $('#addNote').onclick = createNote;
-$('#notesList').onclick = event => { if (event.target.closest('[data-create-note]')) return createNote(); const card = event.target.closest('[data-note-id]'); if (!card || !event.target.closest('[data-delete-note]')) return; notes = notes.filter(note => note.id !== card.dataset.noteId); saveNotes(); renderNotes(); };
-$('#notesList').oninput = event => { const card = event.target.closest('[data-note-id]'); if (!card) return; const note = notes.find(item => item.id === card.dataset.noteId); if (!note) return; if (event.target.matches('[data-note-title]')) note.title = event.target.value; if (event.target.matches('[data-note-body]')) note.body = event.target.value; note.updatedAt = new Date().toISOString(); saveNotes(); card.querySelector('footer').textContent = noteDate(note.updatedAt); };
+$('#notesPage').onclick = event => {
+  const noteButton = event.target.closest('[data-select-note]');
+  if (noteButton) {
+    selectedNoteId = noteButton.dataset.selectNote;
+    return renderNotes();
+  }
+  const colorButton = event.target.closest('[data-note-color]');
+  if (colorButton) {
+    const note = notes.find(item => item.id === selectedNoteId);
+    if (!note) return;
+    note.color = colorButton.dataset.noteColor;
+    note.updatedAt = new Date().toISOString();
+    saveNotes();
+    return renderNotes();
+  }
+  if (!event.target.closest('#deleteNote')) return;
+  notes = notes.filter(note => note.id !== selectedNoteId);
+  selectedNoteId = notes[0]?.id || null;
+  saveNotes();
+  renderNotes();
+};
+$('#notesPage').oninput = event => {
+  if (event.target.matches('#noteSearch')) return renderNotes();
+  if (!event.target.matches('#noteBody')) return;
+  const note = notes.find(item => item.id === selectedNoteId);
+  if (!note) return;
+  note.body = event.target.value;
+  note.title = event.target.value.split(/\r?\n/, 1)[0].trim();
+  note.updatedAt = new Date().toISOString();
+  saveNotes();
+  const title = noteTitle(note);
+  const excerpt = noteContent(note).split(/\r?\n/).slice(1).join(' ').trim() || '내용 없음';
+  const listItem = [...$('#notesList').querySelectorAll('[data-select-note]')].find(item => item.dataset.selectNote === note.id);
+  if (listItem) {
+    listItem.querySelector('strong').textContent = title;
+    listItem.querySelector('span').textContent = excerpt;
+    listItem.querySelector('time').textContent = noteDate(note.updatedAt);
+  }
+  $('#noteUpdatedAt').textContent = `${noteDate(note.updatedAt)} · 저장됐어요 ✓`;
+};
 renderNotes();
 setInterval(() => {
   if (document.querySelector('.nav-item.active')?.dataset.page !== 'register') return;
@@ -1255,5 +1301,11 @@ function renderChecklist() {
     card.querySelector('[data-delete-schedule]').onclick = event => { event.stopPropagation(); deleteSchedule(course); };
   });
 }
-bridge.plan.read().then(showRegistered).catch(error => setMessage(error.message, true));
+bridge.plan.read().then(plans => {
+  showRegistered(plans);
+  if (!savedPlans[today]?.items?.length) {
+    $('#todaySchedulePrompt').hidden = false;
+    $('#todayScheduleLater').focus();
+  }
+}).catch(error => setMessage(error.message, true));
 refreshStatus().catch(error => setMessage(error.message, true));

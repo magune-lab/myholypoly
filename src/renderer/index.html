@@ -14,7 +14,7 @@
   <body>
     <div class="app-titlebar"><span class="titlebar-mark" aria-hidden="true"><img src="../../assets/myholypoly-title.png" alt="" /></span><span>myholypoly — 숙제 플래너</span><div class="window-controls" aria-label="창 제어"><button id="minimizeApp" class="window-control minimize-app" type="button" aria-label="창 최소화" title="최소화"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10" /></svg></button><button id="maximizeApp" class="window-control maximize-app" type="button" aria-label="최대화" title="최대화"><svg class="icon-maximize" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" /></svg><svg class="icon-restore" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 6V4h6v6h-2M4 6h6v6H4z" /></svg></button><button id="closeApp" class="window-control close-app" type="button" aria-label="앱 종료" title="닫기"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" /></svg></button></div></div>
     <main class="shell">
-      <header class="topbar"><nav class="main-nav" aria-label="화면 이동" role="tablist"><button type="button" role="tab" aria-selected="false" class="nav-item" data-page="progress"><span class="nav-icon nav-icon-progress" aria-hidden="true"></span><span class="nav-label">숙제 체크</span><span id="progressNavBadge" class="nav-badge" hidden>0</span></button><button type="button" role="tab" aria-selected="true" class="nav-item active" data-page="overview"><span class="nav-icon nav-icon-overview" aria-hidden="true"></span><span class="nav-label">숙제 한눈에</span></button><button type="button" role="tab" aria-selected="false" class="nav-item" data-page="monthly"><span class="nav-icon nav-icon-monthly" aria-hidden="true"></span><span class="nav-label">시험 달력</span><span id="monthlyNavBadge" class="nav-badge nav-badge-exam" hidden></span></button><span class="nav-divider" aria-hidden="true"></span><button type="button" role="tab" aria-selected="false" class="nav-item" data-page="register"><span class="nav-icon nav-icon-register" aria-hidden="true"></span><span class="nav-label">숙제 가져오기</span></button><button type="button" role="tab" aria-selected="false" class="nav-item" data-page="notes"><span class="nav-icon nav-icon-notes" aria-hidden="true"></span><span class="nav-label">메모장</span></button><span class="nav-spacer" aria-hidden="true"></span><button type="button" role="tab" aria-selected="false" class="nav-item nav-item-settings" data-page="settings"><span class="nav-icon nav-icon-settings" aria-hidden="true"></span><span class="nav-label">설정</span></button></nav><footer class="sidebar-app-info"><button id="appUpdateBadge" class="app-update-badge" type="button" hidden><img src="./icons/icon-update-sun.svg" alt=""><span class="update-speech"><strong>앱이 더 좋아졌어!</strong><small>누르면 새 앱으로 바뀌어요</small></span></button><span id="appVersion">v0.1.23</span></footer></header>
+      <header class="topbar"><nav class="main-nav" aria-label="화면 이동" role="tablist"><button type="button" role="tab" aria-selected="false" class="nav-item" data-page="progress"><span class="nav-icon nav-icon-progress" aria-hidden="true"></span><span class="nav-label">숙제 체크</span><span id="progressNavBadge" class="nav-badge" hidden>0</span></button><button type="button" role="tab" aria-selected="true" class="nav-item active" data-page="overview"><span class="nav-icon nav-icon-overview" aria-hidden="true"></span><span class="nav-label">숙제 한눈에</span></button><button type="button" role="tab" aria-selected="false" class="nav-item" data-page="monthly"><span class="nav-icon nav-icon-monthly" aria-hidden="true"></span><span class="nav-label">시험 달력</span><span id="monthlyNavBadge" class="nav-badge nav-badge-exam" hidden></span></button><span class="nav-divider" aria-hidden="true"></span><button type="button" role="tab" aria-selected="false" class="nav-item" data-page="register"><span class="nav-icon nav-icon-register" aria-hidden="true"></span><span class="nav-label">숙제 가져오기</span></button><button type="button" role="tab" aria-selected="false" class="nav-item" data-page="notes"><span class="nav-icon nav-icon-notes" aria-hidden="true"></span><span class="nav-label">메모장</span></button><span class="nav-spacer" aria-hidden="true"></span><button type="button" role="tab" aria-selected="false" class="nav-item nav-item-settings" data-page="settings"><span class="nav-icon nav-icon-settings" aria-hidden="true"></span><span class="nav-label">설정</span></button></nav><footer class="sidebar-app-info"><button id="appUpdateBadge" class="app-update-badge" type="button" hidden><img src="./icons/icon-update-sun.svg" alt=""><span class="update-speech"><strong>앱이 더 좋아졌어!</strong><small>누르면 새 앱으로 바뀌어요</small></span></button><span id="appVersion">v0.1.24</span></footer></header>
       <section id="scheduleFilterBar" class="global-filterbar" aria-label="공통 일정 필터"><div class="gantt-month-controls"><div class="month-picker option-one-month-picker"><button id="monthQuickPrevious" class="month-quick-arrow" type="button" aria-label="이전 달">‹</button><button id="monthPickerButton" class="month-current option-one-month-current" type="button" aria-expanded="false"><span class="month-calendar-icon" aria-hidden="true"></span><span id="monthPickerText"></span></button><button id="monthQuickNext" class="month-quick-arrow" type="button" aria-label="다음 달">›</button><div id="monthPopover" class="month-popover option-one-month-popover" hidden><div class="month-popover-head"><button id="monthYearPrevious" type="button" aria-label="이전 연도">‹</button><strong id="monthStripYear"></strong><button id="monthYearNext" type="button" aria-label="다음 연도">›</button></div><div id="monthGrid" class="month-grid option-one-month-grid"></div><div class="month-popover-foot"><span><i></i>숙제가 있는 달</span><button id="monthToday" type="button">이번 달로</button></div></div><input id="ganttMonth" type="hidden" /></div></div><div class="schedule-filter-actions"><div id="scheduleScopeTabs" class="scope-tabs" role="tablist" aria-label="공통 일정 범위"><button type="button" role="tab" aria-selected="false" class="scope-tab" data-scope="urgent">마감 임박</button><button type="button" role="tab" aria-selected="false" class="scope-tab" data-scope="today">오늘</button><button type="button" role="tab" aria-selected="false" class="scope-tab" data-scope="week">이번 주</button><button type="button" role="tab" aria-selected="true" class="scope-tab active" data-scope="all">전체</button></div><button id="hideCompleted" class="hide-completed" type="button" aria-pressed="false">완료 항목 숨기기</button></div></section>
       <section id="overviewPage" class="app-page active" aria-label="숙제 한눈에">
         <div class="page-title"><div><p class="eyebrow">월별 숙제를 한눈에 확인해요</p><h1>숙제 한눈에</h1></div><div class="overview-completion" aria-label="이번 달 완료율"><span>완료율</span><i><b id="overviewCompletionBar"></b></i><strong id="overviewCompletionRate">0%</strong></div></div>
@@ -49,26 +49,21 @@
         <section id="checklistView" class="schedule panel"><div id="checklistList" class="action-list"><p class="muted">등록된 일정이 없습니다.</p></div></section>
       </section>
       <section id="registerPage" class="app-page" aria-label="숙제 가져오기" hidden>
-        <div class="page-title register-page-title"><div><p class="eyebrow">e-POLY 숙제를 불러와 등록하세요</p><h1>숙제 가져오기</h1></div></div>
-        <div id="registerSteps" class="register-steps" aria-label="일정 등록 단계"><div class="active"><b>1</b><span id="importStartStepLabel">e-POLY 실행</span></div><i></i><div><b>2</b><span>캘린더 열기</span></div><i></i><div class="import-step"><b>3</b><span>숙제 가져오기</span><p id="importMessage" class="import-message" role="status" aria-live="polite" hidden></p></div><i></i><div><b>4</b><span>내용 편집</span></div></div>
+        <div class="page-title register-page-title"><div><p class="eyebrow">POLY 웹에서 숙제를 불러와 등록하세요</p><h1>숙제 가져오기</h1></div></div>
+        <div id="registerSteps" class="register-steps" aria-label="일정 등록 단계"><div class="active"><b>1</b><span>POLY 웹 로그인</span></div><i></i><div><b>2</b><span>숙제 가져오기</span><p id="importMessage" class="import-message" role="status" aria-live="polite" hidden></p></div><i></i><div><b>3</b><span>내용 확인·등록</span></div></div>
         <div class="register-dashboard">
         <div class="register-import-column">
-        <section class="register-control-panel" aria-label="e-POLY 제어">
-          <div id="importSourceCard" class="import-card-block epoly-import-card" data-import-source="app">
-            <p class="import-card-title">일정 가져오기</p>
-            <div class="import-source-switch" role="group" aria-label="숙제를 불러올 곳">
-              <button id="importSourceApp" type="button" class="import-source-option active" aria-pressed="true"><span class="import-source-option-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="12" rx="2.5"></rect><path d="M8.5 20h7M12 16.5V20"></path><path class="source-accent" d="M7.5 9.5h9M7.5 12.5h5"></path></svg></span><span>e-POLY 앱</span></button>
-              <button id="importSourceWeb" type="button" class="import-source-option" aria-pressed="false"><span class="import-source-option-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"></circle><path d="M3.8 12h16.4M12 3.5c2.2 2.3 3.3 5.1 3.3 8.5S14.2 18.2 12 20.5M12 3.5C9.8 5.8 8.7 8.6 8.7 12s1.1 6.2 3.3 8.5"></path></svg></span><span>POLY 웹</span></button>
-            </div>
-            <div class="epoly-row"><span class="epoly-icon" aria-hidden="true"><svg class="source-symbol-app" viewBox="0 0 32 32"><rect x="5" y="5" width="22" height="17" rx="4"></rect><path d="M11 27h10M16 22v5"></path><path class="source-accent" d="M10 11h12M10 16h7"></path></svg><svg class="source-symbol-web" viewBox="0 0 32 32"><circle cx="16" cy="16" r="11"></circle><path d="M5 16h22M16 5c3 3 4.5 6.7 4.5 11S19 24 16 27M16 5c-3 3-4.5 6.7-4.5 11S13 24 16 27"></path></svg></span><div class="epoly-copy"><strong id="importSourceHeading">e-POLY 앱에서 가져오기</strong><span id="importSourceDescription">앱 캘린더의 숙제를 불러와요</span></div></div>
-            <button id="launchEpoly" type="button" class="app-launch">e-POLY 실행</button>
-            <div id="epolyInstallHelp" class="epoly-install-help" hidden><strong>e-POLY가 설치되어 있지 않습니다.</strong><span>PC 설치 가이드를 보고 설치한 후 다시 시도해 주세요.</span><button id="openEpolyInstallGuide" type="button">PC 설치 가이드 보기</button></div>
-          </div>
+        <section class="register-control-panel" aria-label="POLY 웹에서 숙제 가져오기">
+          <article class="import-card-block poly-web-login-card">
+            <div class="poly-web-card-head"><p class="import-card-title">POLY 웹</p><span id="connection" class="connection offline">연결 전</span></div>
+            <div class="poly-web-copy"><strong>로그인 후 숙제를 가져와요</strong></div>
+            <button id="launchPolyWeb" type="button" class="app-launch poly-web-login-button">POLY 웹 열어서 로그인</button>
+          </article>
           <div class="import-card-block calendar-import-card">
-            <div class="import-card-status"><p class="import-card-title">연결된 캘린더</p><span id="connection" class="connection offline">확인 중</span></div>
-            <div class="plan-date"><span>과제일</span><div class="plan-date-control"><button id="planDatePrevious" class="plan-date-arrow" type="button" aria-label="이전 날짜"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m10 3-5 5 5 5" /></svg></button><button id="planDateButton" class="plan-date-current" type="button" aria-label="과제일 선택"><strong id="planDateText"></strong><em id="planDateToday" hidden>오늘</em></button><input id="planDate" type="hidden" /><button id="planDateNext" class="plan-date-arrow" type="button" aria-label="다음 날짜"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg></button></div></div>
-            <button id="getToday" type="button" class="command-button load-schedule">일정 불러오기</button>
-            <button id="openCalendar" type="button" class="command-button open-calendar-secondary">캘린더 열기</button>
+            <div class="import-card-status"><p class="import-card-title">숙제 가져오기</p><span id="importAvailability" class="connection offline">로그인 필요</span></div>
+            <div class="plan-date"><span>가져올 날짜</span><div class="plan-date-control"><button id="planDatePrevious" class="plan-date-arrow" type="button" aria-label="이전 날짜"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m10 3-5 5 5 5" /></svg></button><button id="planDateButton" class="plan-date-current" type="button" aria-label="가져올 날짜 선택"><strong id="planDateText"></strong><em id="planDateToday" hidden>오늘</em></button><input id="planDate" type="hidden" /><button id="planDateNext" class="plan-date-arrow" type="button" aria-label="다음 날짜"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg></button></div></div>
+            <button id="getToday" type="button" class="command-button load-schedule">선택한 날짜 숙제 불러오기</button>
+            <button id="openCalendar" type="button" class="command-button open-calendar-secondary">POLY 웹 숙제 화면 열기</button>
           </div>
           <p id="connectionCopy" class="sr-copy">연결 상태를 확인하고 있습니다.</p>
         </section>
@@ -77,7 +72,7 @@
         <section class="focus-register" aria-label="일정 편집">
           <div class="focus-register-body">
             <section class="course-workspace">
-              <div class="course-toolbar"><div class="course-toolbar-title"><strong>과목 편집</strong><span id="sourceLabel">직접 입력</span></div><div class="course-toolbar-actions"><button id="addTask" type="button">＋ 과목 추가</button><button id="deleteCourse" type="button">선택 과목 삭제</button><button id="register" type="button" class="primary">일정 등록</button></div></div>
+              <div class="course-toolbar"><div class="course-toolbar-title"><strong>가져온 숙제 확인</strong><span id="sourceLabel">직접 입력</span></div><div class="course-toolbar-actions"><button id="addTask" type="button">＋ 과목 추가</button><button id="deleteCourse" type="button">선택 과목 삭제</button><button id="register" type="button" class="primary">일정 등록</button></div></div>
               <div id="courseEditor" class="course-stack"></div>
               <div class="workspace-footer"><p id="message" class="message" role="status"></p></div>
             </section>
@@ -87,8 +82,36 @@
         </div>
       </section>
       <section id="notesPage" class="app-page notes-page" aria-label="메모장" hidden>
-        <div class="page-title notes-page-title"><div><p class="eyebrow">필요한 내용을 간단히 기록하세요</p><h1>메모장</h1></div><div class="notes-add-control" data-limit-reached="false"><span id="noteLimitMessage" class="note-limit-message" role="status" aria-live="polite" hidden>메모는 최대 9개까지 만들 수 있어요</span><span id="noteCount" class="note-count" aria-label="메모 개수">0 / 9</span><button id="addNote" class="notes-add-button" type="button" aria-label="새 메모 추가">＋</button></div></div>
-        <section class="notes-panel"><div id="notesList" class="notes-list"></div></section>
+        <div class="page-title notes-page-title"><div><p class="eyebrow">필요한 내용을 공책에 적어요</p><h1>메모장</h1></div></div>
+        <section class="notes-panel notebook-layout" aria-label="공책 메모">
+          <aside class="notebook-sidebar" aria-label="메모 목록">
+            <div class="notebook-sidebar-tools">
+              <input id="noteSearch" type="search" placeholder="메모 찾기" aria-label="메모 찾기" />
+              <button id="addNote" class="notebook-add-button" type="button">＋ 새 메모</button>
+            </div>
+            <p id="noteCount" class="notebook-note-count" aria-label="메모 개수">0 / 9</p>
+            <p id="noteLimitMessage" class="note-limit-message" role="status" aria-live="polite" hidden>메모는 최대 9개까지 만들 수 있어요</p>
+            <div id="notesList" class="notes-list" role="list"></div>
+          </aside>
+          <section class="notebook-editor" aria-label="메모 편집">
+            <div id="notebookEmpty" class="notebook-empty"><strong>메모를 선택하거나 새 메모를 작성하세요</strong></div>
+            <div id="noteEditorContent" class="notebook-editor-content" hidden>
+              <header class="notebook-editor-toolbar">
+                <div><span id="noteUpdatedAt"></span><span id="noteSaveStatus" role="status" aria-live="polite"></span></div>
+                <div class="notebook-editor-actions">
+                  <div class="notebook-colors" role="group" aria-label="메모 색상">
+                    <button type="button" data-note-color="yellow" aria-label="노란색 메모"></button>
+                    <button type="button" data-note-color="pink" aria-label="분홍색 메모"></button>
+                    <button type="button" data-note-color="blue" aria-label="파란색 메모"></button>
+                    <button type="button" data-note-color="green" aria-label="초록색 메모"></button>
+                  </div>
+                  <button id="deleteNote" class="notebook-delete-button" type="button" aria-label="메모 삭제">×</button>
+                </div>
+              </header>
+              <textarea id="noteBody" class="notebook-paper" placeholder="글씨를 쓰면 첫 줄이 제목이 돼요" aria-label="메모 내용"></textarea>
+            </div>
+          </section>
+        </section>
       </section>
       <section id="settingsPage" class="app-page settings-page" aria-label="설정" hidden>
         <div class="page-title"><div><p class="eyebrow">앱 사용 환경을 관리하세요</p><h1>설정</h1></div></div>
@@ -100,7 +123,7 @@
           </div>
           <div class="settings-item settings-app-info-item">
             <div class="settings-item-icon settings-info-icon" aria-hidden="true"></div>
-            <div class="settings-item-copy"><strong>앱 정보</strong><span>현재 버전 <b id="settingsAppVersion">v0.1.23</b></span><em id="updateCheckMessage" role="status">업데이트를 자동으로 확인해요</em></div>
+            <div class="settings-item-copy"><strong>앱 정보</strong><span>현재 버전 <b id="settingsAppVersion">v0.1.24</b></span><em id="updateCheckMessage" role="status">업데이트를 자동으로 확인해요</em></div>
             <div class="settings-app-actions"><button id="checkForUpdates" class="settings-link-button settings-update-button" type="button">업데이트 확인</button><button id="previewUpdate" class="settings-preview-update" type="button" hidden>여러 버전 업데이트 테스트</button><button id="openGithubRepository" class="settings-text-link" type="button">릴리스 페이지 보기<img src="./icons/icon-external-link.svg" alt=""></button></div>
           </div>
         </section>
@@ -112,7 +135,7 @@
         <span class="update-dialog-icon" aria-hidden="true"><img src="./icons/icon-update-download.svg" alt=""></span>
         <p class="update-dialog-kicker">새로운 myholypoly</p>
         <h2 id="updateDialogTitle">업데이트가 있어요!</h2>
-        <div class="update-version-row"><span id="updateCurrentVersion">v0.1.23</span><i><img src="./icons/icon-version-arrow.svg" alt=""></i><strong id="updateLatestVersion"></strong></div>
+        <div class="update-version-row"><span id="updateCurrentVersion">v0.1.24</span><i><img src="./icons/icon-version-arrow.svg" alt=""></i><strong id="updateLatestVersion"></strong></div>
         <p id="updateVersionSummary" class="update-version-summary"></p>
         <div class="update-meta"><span id="updatePublishedAt"></span><span id="updateSize"></span></div>
         <section class="update-notes"><strong>이번 업데이트 내용</strong><div id="updateNotes"></div></section>
@@ -137,6 +160,14 @@
         <p id="deleteScheduleDialogDescription">삭제하면 되돌릴 수 없어요</p>
         <div class="delete-dialog-actions"><button id="deleteScheduleCancel" type="button">취소</button><button id="deleteScheduleConfirm" type="button">삭제하기</button></div>
       </div>
+    </div>
+    <div id="todaySchedulePrompt" class="today-schedule-prompt" role="dialog" aria-modal="true" aria-labelledby="todaySchedulePromptTitle" aria-describedby="todaySchedulePromptDescription" hidden>
+      <section class="today-schedule-prompt-card">
+        <span class="today-schedule-prompt-icon" aria-hidden="true">✓</span>
+        <h2 id="todaySchedulePromptTitle">오늘 등록된 숙제가 없어요</h2>
+        <p id="todaySchedulePromptDescription">오늘 숙제를 가져오거나 직접 등록할까요?</p>
+        <div class="today-schedule-prompt-actions"><button id="todayScheduleLater" type="button">나중에</button><button id="todayScheduleRegister" type="button">숙제 가져오기</button></div>
+      </section>
     </div>
     <script src="app.js"></script>
   </body>
